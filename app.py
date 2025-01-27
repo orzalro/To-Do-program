@@ -2,7 +2,7 @@ import sys
 import util
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QFormLayout, QDialogButtonBox
 from PyQt5.QtCore import Qt
-    
+
 class AddTodoDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -106,9 +106,11 @@ class MyApp(QWidget):
         row = self.todo_list.row(item)
         self.todo_list.takeItem(row)  # 리스트에서 해당 항목 제거
 
-
-
 app = QApplication(sys.argv)
 window = MyApp()
+
+util.save_data(window)
+print(util.load_data(window))
+
 window.show()
 sys.exit(app.exec_())
