@@ -1,5 +1,5 @@
 import sys
-from util import *
+import util
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QFormLayout, QDialogButtonBox
 from PyQt5.QtCore import Qt
     
@@ -40,7 +40,7 @@ class AddTodoDialog(QDialog):
         return self.title_input.text()
     
         # 디버깅
-        # return reset_algorithm.daily_reset(1)
+        # return util.daily_reset(1)
 
 
 class MyApp(QWidget):
