@@ -69,6 +69,7 @@ class MyApp(QWidget):
 
         # 레이아웃을 창에 설정
         self.setLayout(layout)
+        util.load_data(self)
 
     def open_add_todo_dialog(self):
         dialog = AddTodoDialog()
@@ -77,12 +78,16 @@ class MyApp(QWidget):
             todo_data = dialog.get_todo_data()
             self.add_todo(todo_data)
 
-    def add_todo(self, todo_data):  
+    def add_todo(self, todo_data, checked):
         # 할 일이 비어 있지 않으면 리스트에 추가
         if todo_data:
             item = QListWidgetItem(todo_data)
             checkbox = QCheckBox()
-            checkbox.setChecked(False)  # 초기 상태는 선택되지 않음
+
+            if checked:
+                checkbox.setChecked(True)
+            else:
+                checkbox.setChecked(False)  # 초기 상태는 선택되지 않음
 
             remove_button = QPushButton('X')
             remove_button.setFixedSize(15, 15)
@@ -108,9 +113,5 @@ class MyApp(QWidget):
 
 app = QApplication(sys.argv)
 window = MyApp()
-
-util.save_data(window)
-print(util.load_data(window))
-
 window.show()
 sys.exit(app.exec_())
