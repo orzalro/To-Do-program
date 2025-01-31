@@ -38,9 +38,6 @@ class AddTodoDialog(QDialog):
     def get_todo_data(self):
         # 입력된 데이터를 반환
         return self.title_input.text()
-    
-        # 디버깅
-        # return util.daily_reset(1)
 
 
 class MyApp(QWidget):
@@ -58,7 +55,7 @@ class MyApp(QWidget):
         
         # Todo 추가 버튼 (QPushButton)
         add_button = QPushButton('일정 추가', self)
-        add_button.clicked.connect(self.open_add_todo_dialog)  # 버튼 클릭 시 add_todo 메서드 실행
+        add_button.clicked.connect(self.open_add_todo_dialog)  # 버튼 클릭 시 add_todo 메소드 실행을 위한 정보 입력을 받는 다이얼로그 창을 띄움
 
         # Todo 리스트 (QListWidget)
         self.todo_list = QListWidget(self)
@@ -78,8 +75,8 @@ class MyApp(QWidget):
             todo_data = dialog.get_todo_data()
             self.add_todo(todo_data)
 
-    def add_todo(self, todo_data, checked):
-        # 할 일이 비어 있지 않으면 리스트에 추가
+    def show_todo(self, todo_data, checked = 0):
+        # todo_data가 비어 있지 않으면 리스트에 추가
         if todo_data:
             item = QListWidgetItem(todo_data)
             checkbox = QCheckBox()
@@ -106,6 +103,10 @@ class MyApp(QWidget):
             
         else:
             print("할 일을 입력해주세요.")
+
+    def add_todo(self, todo_data):
+        self.show_todo(todo_data) # 추가한 일정을 화면에 표시하는 작업
+        #util.save_data(self) #일정 추가 작업 후 세이브 진행
 
     def remove_todo(self, item):
         row = self.todo_list.row(item)

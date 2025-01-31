@@ -3,18 +3,10 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 import os
 
-# pandas 이용해서 json파일로 데이터 저장하게 변경
-
-# 1. 처음에 일단 json 읽어오기
-# 2. 읽어온걸로 데이터 구성 및 체크 유무에 따른 초기화 알고리즘 실행
-
-# json 정보 구성은?
-#     일정 이름, 체크 유무, 마지막 체크 시간, 초기화 알고리즘 종류, 초기화 알고리즘 변수 등
-
 # 메모
-# 실시간 저장? (하는 쪽으로 갈 듯?)
+# 실시간 저장?
 # 1회성 일정, 반복 일정?
-# 알고리즘 계산에 쓰인 변수에 할당된 메모리 삭제 필요? 자동 삭제되나? 확인 필요...
+# 알고리즘 계산에 쓰인 변수에 할당된 메모리 삭제? 확인 필요...
 
 
 # json 구성
@@ -40,11 +32,11 @@ def load_data(app):
                 if resetmethod == 0: checked = daily_reset(resettime, lastchecktime)
                 if resetmethod == 1: checked = weekly_reset(resettime, lastchecktime, resetparam0)
                 if resetmethod == 2: checked = monthly_reset(resettime, lastchecktime, resetparam0)
-                app.add_todo(todoname, checked)
+                app.show_todo(todoname, checked)
 
             # 체크가 되어있지 않은 경우
             else:
-                app.add_todo(todoname, checked)
+                app.show_todo(todoname, checked)
             
 
 
