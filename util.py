@@ -3,12 +3,6 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 import os
 
-# 메모
-# 실시간 저장?
-# 1회성 일정, 반복 일정?
-# 알고리즘 계산에 쓰인 변수에 할당된 메모리 삭제? 확인 필요...
-
-
 # json 구성
 # ['name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0']
 def load_data(app):
@@ -42,6 +36,22 @@ def load_data(app):
 
 def save_data(app):
     file_path = 'userdata.json'
+
+    for i in range(app.todo_list.count()):
+        item = app.todo_list.item(i)
+        widget = app.todo_list.itemWidget(item)
+
+        todoname = item.data(0)
+        checked = widget.layout().itemAt(0).widget().isChecked()
+
+        print(todoname)
+        print(checked)
+    exit()
+
+    lastchecktime = 1
+    resetmethod = 1
+    resettime = 1
+    resetparam0 = 1
     data = [['test name1', 1, '2025-01-27 11:30:21', 0, 300, 0], ['test name2', 1, '2025-01-27 17:30:21', 1, 900, 5], ['test name3', 1, '2025-01-27 17:30:21', 2, 900, 25]]
 
     df = pd.DataFrame(data, columns=['name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0'])

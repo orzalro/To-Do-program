@@ -19,6 +19,10 @@ class AddTodoDialog(QDialog):
         # 할 일 제목 입력 필드
         self.title_input = QLineEdit(self)
         layout.addRow('제목:', self.title_input)
+        self.reset_method = QLineEdit(self)
+        layout.addRow('초기화 방법:', self.reset_method)
+        self.reset_time = QLineEdit(self)
+        layout.addRow('초기화 시간:', self.reset_time)
         
         pushbutton = QPushButton('1', self)
         pushbutton2 = QPushButton('2', self)
@@ -34,10 +38,6 @@ class AddTodoDialog(QDialog):
         layout.addWidget(button_box)
 
         self.setLayout(layout)
-
-    def get_todo_data(self):
-        # 입력된 데이터를 반환
-        return self.title_input.text()
 
 
 class MyApp(QWidget):
@@ -59,7 +59,7 @@ class MyApp(QWidget):
 
         # Todo 리스트 (QListWidget)
         self.todo_list = QListWidget(self)
-
+        
         # 레이아웃에 위젯 추가
         layout.addWidget(add_button)
         layout.addWidget(self.todo_list)
@@ -72,8 +72,10 @@ class MyApp(QWidget):
         dialog = AddTodoDialog()
         if dialog.exec_() == QDialog.Accepted:
             # 다이얼로그에서 받은 데이터
-            todo_data = dialog.get_todo_data()
-            self.add_todo(todo_data)
+            todo_title = dialog.title_input.text()
+            todo_reset_method = dialog.reset_method.text()
+            todo_reset_time = dialog.reset_time.text()
+            self.add_todo(todo_title, todo_reset_method, todo_reset_time)
 
     def show_todo(self, todo_data, checked = 0):
         # todo_data가 비어 있지 않으면 리스트에 추가
@@ -85,6 +87,12 @@ class MyApp(QWidget):
                 checkbox.setChecked(True)
             else:
                 checkbox.setChecked(False)  # 초기 상태는 선택되지 않음
+            
+            # 디버그
+            #checkbox.clicked.connect(lambda: print(self.todo_list.row(item)))
+            #checkbox.clicked.connect(lambda: print(item.data(0))) # 체크시 해당 아이템의 이름 출력
+            #checkbox.clicked.connect(lambda: print(checkbox.checkState())) # 체크시 해당 아이템의 체크상태 출력
+            checkbox.clicked.connect(lambda: util.save_data(self)) # 체크박스 체크시 save 예정
 
             remove_button = QPushButton('X')
             remove_button.setFixedSize(15, 15)
@@ -104,8 +112,8 @@ class MyApp(QWidget):
         else:
             print("할 일을 입력해주세요.")
 
-    def add_todo(self, todo_data):
-        self.show_todo(todo_data) # 추가한 일정을 화면에 표시하는 작업
+    def add_todo(self, todo_title, todo_reset_method, todo_reset_time):
+        self.show_todo(todo_title) # 추가한 일정을 화면에 표시하는 작업
         #util.save_data(self) #일정 추가 작업 후 세이브 진행
 
     def remove_todo(self, item):
