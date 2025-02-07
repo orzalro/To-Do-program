@@ -19,6 +19,7 @@ def load_data(app):
             resetmethod = df.iloc[i, 3]
             resettime = df.iloc[i, 4]
             resetparam0 = df.iloc[i, 5]
+
             # 체크가 되어있는 경우
             if checked:
                 # 체크박스 초기화 알고리즘 실행
@@ -26,36 +27,50 @@ def load_data(app):
                 if resetmethod == 0: checked = daily_reset(resettime, lastchecktime)
                 if resetmethod == 1: checked = weekly_reset(resettime, lastchecktime, resetparam0)
                 if resetmethod == 2: checked = monthly_reset(resettime, lastchecktime, resetparam0)
-                app.show_todo(todoname, checked)
+                app.show_todo(todoname, resetmethod, resettime, resetparam0, checked)
 
             # 체크가 되어있지 않은 경우
             else:
-                app.show_todo(todoname, checked)
+                app.show_todo(todoname, resetmethod, resettime, resetparam0, checked)
             
 
 
 def save_data(app):
     file_path = 'userdata.json'
-
+    data = []
     for i in range(app.todo_list.count()):
         item = app.todo_list.item(i)
         widget = app.todo_list.itemWidget(item)
 
         todoname = item.data(0)
-        checked = widget.layout().itemAt(0).widget().isChecked()
+        checked = widget.layout().itemAt(widget.layout().count() - 3).widget().isChecked() # 메소드에 따라 아이템 갯수가 유동적이니 뒤에서부터 세는 방식으로 구현
+        lastchecktime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        resetmethod = widget.layout().itemAt(0).widget().text()
+        resettime = widget.layout().itemAt(1).widget().text()
+        resetparam0 = widget.layout().itemAt(2).widget().text()
 
-        print(todoname)
-        print(checked)
-    exit()
+        checked = 1 if checked else 0
+        
+        method_dict = {'일간': 0, '주간': 1, '월간': 2}
+        resetmethod = method_dict[resetmethod]
+        
+        split_timestr = resettime.split(':')
+        resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])
 
-    lastchecktime = 1
-    resetmethod = 1
-    resettime = 1
-    resetparam0 = 1
-    data = [['test name1', 1, '2025-01-27 11:30:21', 0, 300, 0], ['test name2', 1, '2025-01-27 17:30:21', 1, 900, 5], ['test name3', 1, '2025-01-27 17:30:21', 2, 900, 25]]
-
+        weekday_dict = {'월요일': 0, '화요일': 1, '수요일': 2, '목요일': 3, '금요일': 4, '토요일': 5, '일요일': 6}
+        if resetmethod == 0:
+            resetparam0 = -1
+        elif resetmethod == 1:
+            resetparam0 = weekday_dict[resetparam0]
+        elif resetmethod == 2:
+            resetparam0 = resetparam0[:-1]
+        
+        data.append([todoname, checked, lastchecktime, resetmethod, resettime, resetparam0])
+        
     df = pd.DataFrame(data, columns=['name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0'])
     df.to_json(file_path, orient='records', lines=True)
+
+    print('저장 완료')
 
 
 #     1. 시간별(daily), 요일별(weekly), 매 달 ~일 등(monthly)
