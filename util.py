@@ -5,6 +5,7 @@ import os
 
 # json 구성
 # ['name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0']
+
 def load_data(app):
     # json에서 유저 일정 데이터 읽기
     file_path = 'userdata.json'
@@ -55,15 +56,12 @@ def save_data(app):
         resetmethod = method_dict[resetmethod]
         
         split_timestr = resettime.split(':')
-        resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])
+        resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])  # ex) 05:00(%M:%S) -> 300(sec)
 
         weekday_dict = {'월요일': 0, '화요일': 1, '수요일': 2, '목요일': 3, '금요일': 4, '토요일': 5, '일요일': 6}
-        if resetmethod == 0:
-            resetparam0 = -1
-        elif resetmethod == 1:
-            resetparam0 = weekday_dict[resetparam0]
-        elif resetmethod == 2:
-            resetparam0 = resetparam0[:-1]
+        if resetmethod == 0: resetparam0 = -1 # 사용안함
+        elif resetmethod == 1: resetparam0 = weekday_dict[resetparam0] # 요일
+        elif resetmethod == 2: resetparam0 = resetparam0[:-1] # 일
         
         data.append([todoname, checked, lastchecktime, resetmethod, resettime, resetparam0])
         
