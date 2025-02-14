@@ -1,9 +1,11 @@
 from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QHBoxLayout, QDialog, QFormLayout, QDialogButtonBox, QStackedWidget
 
+
 class AddTodoDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.init_ui()
+
 
     def init_ui(self):
         # 창 설정
@@ -55,6 +57,7 @@ class AddTodoDialog(QDialog):
 
         self.setLayout(layout)
 
+
     def update_button_styles(self, active_index):
         # 모든 버튼 초기화 (기본 스타일)
         self.daily_btn.setStyleSheet("background-color: none;")
@@ -69,6 +72,7 @@ class AddTodoDialog(QDialog):
         elif active_index == 2:
             self.monthly_btn.setStyleSheet("border-radius: 10px; padding: 5px; background-color: lightblue;")
 
+
     # 선택된 알고리즘에 따라 입력필드 변경
     def init_daily_layout(self):
         layout = QFormLayout()
@@ -76,6 +80,7 @@ class AddTodoDialog(QDialog):
         self.daily_reset_time.setPlaceholderText('0-1439(분)')
         layout.addRow('초기화 시간:', self.daily_reset_time)
         self.daily_layout.setLayout(layout)
+
 
     def init_weekly_layout(self):
         layout = QFormLayout()
@@ -87,6 +92,7 @@ class AddTodoDialog(QDialog):
         layout.addRow('패러미터:', self.weekly_resetparam0)
         self.weekly_layout.setLayout(layout)
 
+
     def init_monthly_layout(self):
         layout = QFormLayout()
         self.monthly_reset_time = QLineEdit(self)
@@ -96,6 +102,7 @@ class AddTodoDialog(QDialog):
         self.monthly_resetparam0.setPlaceholderText('1-31(일)')
         layout.addRow('패러미터:', self.monthly_resetparam0)
         self.monthly_layout.setLayout(layout)
+    
     
     # 다이얼로그 데이터 리턴
     def get_data(self):

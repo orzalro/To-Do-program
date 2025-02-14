@@ -3,9 +3,24 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 import os
 
+
+def formatting_data(resetmethod, resettime, resetparam0):
+    method_dict = {'일간': 0, '주간': 1, '월간': 2}
+    resetmethod = method_dict[resetmethod]
+    
+    split_timestr = resettime.split(':')
+    resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])  # ex) 05:00(%M:%S) -> 300(sec)
+
+    weekday_dict = {'월요일': 0, '화요일': 1, '수요일': 2, '목요일': 3, '금요일': 4, '토요일': 5, '일요일': 6}
+    if resetmethod == 0: resetparam0 = -1 # 사용안함
+    elif resetmethod == 1: resetparam0 = weekday_dict[resetparam0] # 요일
+    elif resetmethod == 2: resetparam0 = resetparam0[:-1] # 일
+
+    return resetmethod, resettime, resetparam0
+
+
 # json 구성
 # ['name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0']
-
 def load_data(app):
     # json에서 유저 일정 데이터 읽기
     file_path = 'userdata.json'
@@ -35,7 +50,6 @@ def load_data(app):
                 app.show_todo(todoname, resetmethod, resettime, resetparam0, checked)
             
 
-
 def save_data(app):
     file_path = 'userdata.json'
     data = []
@@ -51,17 +65,7 @@ def save_data(app):
         resetparam0 = widget.layout().itemAt(2).widget().text()
 
         checked = 1 if checked else 0
-        
-        method_dict = {'일간': 0, '주간': 1, '월간': 2}
-        resetmethod = method_dict[resetmethod]
-        
-        split_timestr = resettime.split(':')
-        resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])  # ex) 05:00(%M:%S) -> 300(sec)
-
-        weekday_dict = {'월요일': 0, '화요일': 1, '수요일': 2, '목요일': 3, '금요일': 4, '토요일': 5, '일요일': 6}
-        if resetmethod == 0: resetparam0 = -1 # 사용안함
-        elif resetmethod == 1: resetparam0 = weekday_dict[resetparam0] # 요일
-        elif resetmethod == 2: resetparam0 = resetparam0[:-1] # 일
+        resetmethod, resettime, resetparam0 = formatting_data(resetmethod, resettime, resetparam0)
         
         data.append([todoname, checked, lastchecktime, resetmethod, resettime, resetparam0])
         
@@ -78,6 +82,7 @@ def save_data(app):
 #             daily - 시간 (분) + 마지막 체크 시간, 2개
 #             weekly - 요일 + 시간 + 마지막 체크 시간, 3개
 #             monthly - 일자 + 시간 + 마지막 체크 시간, 3개
+
 
 # reset_time_input : 분 단위(0-1439), lastcheck_str : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21
 def daily_reset(reset_time_input, lastcheck_str): 
@@ -97,6 +102,7 @@ def daily_reset(reset_time_input, lastcheck_str):
         return 0
     else:
         return 1
+
 
 # reset_time_input : 분 단위(0-1439), lastcheck_str : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, weekday : 요일(0-6)
 def weekly_reset(reset_time_input, lastcheck_str, weekday):
@@ -124,6 +130,7 @@ def weekly_reset(reset_time_input, lastcheck_str, weekday):
     else:
         return 1
 
+
 # reset_time_input : 분 단위(0-1439), lastcheck_str : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, reset_day : 일자(1-31)
 def monthly_reset(reset_time_input, lastcheck_str, reset_day):
     now = datetime.now()
@@ -145,6 +152,7 @@ def monthly_reset(reset_time_input, lastcheck_str, reset_day):
         return 0
     else:
         return 1
+
 
 #     2. 주기별(기준 시간 정하고, 그 시간 기준으로 주기 설정, 초기화시 기준 시간 변경)
 #         1. 현재 시간이 기준 시간과 초기화 시간 사이라면 유지.
