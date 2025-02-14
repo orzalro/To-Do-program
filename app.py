@@ -17,6 +17,7 @@ class DragList(QListWidget):
         source_list = event.source()
         if source_list is self:
             super().dropEvent(event) #같은 자리 드롭시 위젯 사라지는 문제 있음. 같은 자리인지 확인하는 코드 필요
+            util.save_data(window)
         else:
             item = source_list.currentItem()
             widget = source_list.itemWidget(item)
