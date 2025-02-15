@@ -1,7 +1,7 @@
 import sys
 import util
 import dialog as dia
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QLabel, QAbstractItemView, QFrame
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QLabel, QAbstractItemView
 
 
 class DragList(QListWidget):
@@ -64,7 +64,7 @@ class DragList(QListWidget):
                 methodlabel = QLabel('일간')
             elif reset_method == 1:
                 methodlabel = QLabel('주간')
-                weekday_dict = {0: '월요일 (Monday)', 1: '화요일', 2: '수요일', 3: '목요일', 4: '금요일', 5: '토요일', 6: '일요일'}
+                weekday_dict = {0: '월요일', 1: '화요일', 2: '수요일', 3: '목요일', 4: '금요일', 5: '토요일', 6: '일요일'}
                 paramlabel = QLabel(weekday_dict[param])
             elif reset_method == 2:
                 methodlabel = QLabel('월간')
@@ -103,11 +103,11 @@ class MyApp(QWidget):
     def init_ui(self):
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
-        self.setGeometry(560, 190, 800, 700)
+        self.setGeometry(560, 190, 900, 600)
 
         # 그리드 레이아웃 생성
         self.main_layout = QGridLayout()
-        self.show_grid(3, 3)
+        self.show_grid(2, 3)
 
         # 레이아웃을 창에 설정
         self.setLayout(self.main_layout)
@@ -133,7 +133,7 @@ class MyApp(QWidget):
         for i in range(self.grid_row):
             for j in range(self.grid_col):
                 list_vbox = QVBoxLayout()
-                
+
                 self.todo_list[f'list{i * 3 + j}'] = DragList(self)
                 self.todo_list[f'list{i * 3 + j}'].setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
                 list_vbox.addWidget(self.todo_list[f'list{i * 3 + j}'])
