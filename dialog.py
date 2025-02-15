@@ -17,6 +17,7 @@ class AddTodoDialog(QDialog):
         button_layout = QHBoxLayout()
 
         self.title_input = QLineEdit(self)
+        self.title_input.setMaxLength(10)
         layout.addRow('제목:', self.title_input)
 
         # 각 페이지별 레이아웃 설정

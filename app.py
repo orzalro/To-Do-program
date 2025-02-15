@@ -1,10 +1,11 @@
 import sys
 import util
 import dialog as dia
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QLabel, QAbstractItemView
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QLabel, QAbstractItemView, QFrame
 
 
 class DragList(QListWidget):
+    # 드래그 위치에 따라 드래그드롭모드 변경
     def dragEnterEvent(self, event):
         if event.source() is self:
             self.setDragDropMode(QAbstractItemView.InternalMove)
@@ -12,7 +13,7 @@ class DragList(QListWidget):
             self.setDragDropMode(QAbstractItemView.DragDrop)
         super().dragEnterEvent(event)
     
-
+    # 다른 리스트에 드롭시 드롭이벤트 오버라이드
     def dropEvent(self, event):
         source_list = event.source()
         if source_list is self:
@@ -56,8 +57,9 @@ class DragList(QListWidget):
 
             widget = QWidget()
             item_layout = QHBoxLayout(widget)
-            item_layout.setContentsMargins(100, 0, 0, 0)
+            item_layout.setContentsMargins(130, 0, 0, 0)
 
+            # 초기화 알고리즘에 따라 다른 정보 출력
             if reset_method == 0:
                 methodlabel = QLabel('일간')
             elif reset_method == 1:
@@ -67,19 +69,18 @@ class DragList(QListWidget):
             elif reset_method == 2:
                 methodlabel = QLabel('월간')
                 paramlabel = QLabel(f'{param}일')
+            
             reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
-
             timelabel = QLabel(reset_time)
+
             item_layout.addWidget(methodlabel)
             item_layout.addWidget(timelabel)
-            if 'paramlabel' in locals():
-                item_layout.addWidget(paramlabel)
+            if 'paramlabel' in locals(): item_layout.addWidget(paramlabel)
 
             item_layout.addWidget(checkbox)
             item_layout.addWidget(remove_button)
             item_layout.addStretch(1)
 
-            # 체크박스를 항목에 추가
             self.addItem(item)
             self.setItemWidget(item, widget)
             
@@ -97,49 +98,56 @@ class MyApp(QWidget):
     def __init__(self):
         super().__init__()
         self.init_ui()
-    
+
 
     def init_ui(self):
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
-        self.setGeometry(760, 290, 400, 300)
+        self.setGeometry(560, 190, 800, 700)
 
-        # 레이아웃 생성
-        layout = QVBoxLayout()
-        
-        # Todo 추가 버튼 (QPushButton)
-        add_button = QPushButton('일정 추가', self)
-        add_button.clicked.connect(self.open_add_todo_dialog)  # 버튼 클릭 시 add_todo 메소드 실행을 위한 정보 입력을 받는 다이얼로그 창을 띄움
-
-        # Todo 리스트 (QListWidget)
-        self.todo_list = DragList(self)
-        self.todo_list.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
-
-        # 레이아웃에 위젯 추가
-        layout.addWidget(add_button)
-        layout.addWidget(self.todo_list)
-
-        self.todo_list2 = DragList(self)
-        self.todo_list2.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
-        layout.addWidget(self.todo_list2)
+        # 그리드 레이아웃 생성
+        self.main_layout = QGridLayout()
+        self.show_grid(3, 3)
 
         # 레이아웃을 창에 설정
-        self.setLayout(layout)
+        self.setLayout(self.main_layout)
         util.load_data(self)
 
 
-    def open_add_todo_dialog(self):
+    def open_add_todo_dialog(self, row, col):
         dialog = dia.AddTodoDialog()
         if dialog.exec_() == QDialog.Accepted:
             # 다이얼로그에서 받은 데이터
             todo_title = dialog.title_input.text()
             todo_reset_method, todo_reset_time, resetparam0 = dialog.get_data()
-            self.todo_list.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0)
+            self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0)
             util.save_data(self)
 
 
-    def show_todo(self, todo_title, todo_reset_method, todo_reset_time, resetparam0, checked):
-        self.todo_list.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, checked)
+    def show_grid(self, row, col):
+        self.grid_row = row
+        self.grid_col = col
+        
+        # 일정 리스트 (DragList(QListWidget))
+        self.todo_list = {}
+        for i in range(self.grid_row):
+            for j in range(self.grid_col):
+                list_vbox = QVBoxLayout()
+                
+                self.todo_list[f'list{i * 3 + j}'] = DragList(self)
+                self.todo_list[f'list{i * 3 + j}'].setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
+                list_vbox.addWidget(self.todo_list[f'list{i * 3 + j}'])
+
+                # 일정 추가 버튼
+                add_button = QPushButton('일정 추가', self) 
+                add_button.clicked.connect(lambda _, row = i, col = j: self.open_add_todo_dialog(row, col)) # 버튼 클릭 시 add_todo 메소드 실행을 위한 정보 입력을 받는 다이얼로그 창을 띄움
+                list_vbox.addWidget(add_button)
+
+                self.main_layout.addLayout(list_vbox, i * 2, j * 2)
+
+
+    def show_todo(self, row, col,  todo_title, todo_reset_method, todo_reset_time, resetparam0, checked):
+        self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, checked)
 
 
 app = QApplication(sys.argv)

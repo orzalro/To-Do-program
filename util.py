@@ -20,7 +20,7 @@ def formatting_data(resetmethod, resettime, resetparam0):
 
 
 # json 구성
-# ['name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0']
+# ['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0']
 def load_data(app):
     # json에서 유저 일정 데이터 읽기
     file_path = 'userdata.json'
@@ -29,12 +29,14 @@ def load_data(app):
 
         # 일정 갯수에 따라 반복문 실행
         for i in range(len(df)):
-            todoname = df.iloc[i, 0]
-            checked = df.iloc[i, 1]
-            lastchecktime = df.iloc[i, 2]
-            resetmethod = df.iloc[i, 3]
-            resettime = df.iloc[i, 4]
-            resetparam0 = df.iloc[i, 5]
+            row = df.iloc[i, 0]
+            col = df.iloc[i, 1]
+            todoname = df.iloc[i, 2]
+            checked = df.iloc[i, 3]
+            lastchecktime = df.iloc[i, 4]
+            resetmethod = df.iloc[i, 5]
+            resettime = df.iloc[i, 6]
+            resetparam0 = df.iloc[i, 7]
 
             # 체크가 되어있는 경우
             if checked:
@@ -43,33 +45,37 @@ def load_data(app):
                 if resetmethod == 0: checked = daily_reset(resettime, lastchecktime)
                 if resetmethod == 1: checked = weekly_reset(resettime, lastchecktime, resetparam0)
                 if resetmethod == 2: checked = monthly_reset(resettime, lastchecktime, resetparam0)
-                app.show_todo(todoname, resetmethod, resettime, resetparam0, checked)
+                app.show_todo(row, col, todoname, resetmethod, resettime, resetparam0, checked)
 
             # 체크가 되어있지 않은 경우
             else:
-                app.show_todo(todoname, resetmethod, resettime, resetparam0, checked)
+                app.show_todo(row, col, todoname, resetmethod, resettime, resetparam0, checked)
             
 
 def save_data(app):
     file_path = 'userdata.json'
     data = []
-    for i in range(app.todo_list.count()):
-        item = app.todo_list.item(i)
-        widget = app.todo_list.itemWidget(item)
 
-        todoname = item.data(0)
-        checked = widget.layout().itemAt(widget.layout().count() - 3).widget().isChecked() # 메소드에 따라 아이템 갯수가 유동적이니 뒤에서부터 세는 방식으로 구현
-        lastchecktime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        resetmethod = widget.layout().itemAt(0).widget().text()
-        resettime = widget.layout().itemAt(1).widget().text()
-        resetparam0 = widget.layout().itemAt(2).widget().text()
+    for row in range(app.grid_row):
+        for col in range(app.grid_col):
+            todo_list = app.todo_list[f'list{row * 3 + col}']
+            for i in range(todo_list.count()):
+                item = todo_list.item(i)
+                widget = todo_list.itemWidget(item)
 
-        checked = 1 if checked else 0
-        resetmethod, resettime, resetparam0 = formatting_data(resetmethod, resettime, resetparam0)
+                todoname = item.data(0)
+                checked = widget.layout().itemAt(widget.layout().count() - 3).widget().isChecked() # 메소드에 따라 아이템 갯수가 유동적이니 뒤에서부터 세는 방식으로 구현
+                lastchecktime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                resetmethod = widget.layout().itemAt(0).widget().text()
+                resettime = widget.layout().itemAt(1).widget().text()
+                resetparam0 = widget.layout().itemAt(2).widget().text()
+
+                checked = 1 if checked else 0
+                resetmethod, resettime, resetparam0 = formatting_data(resetmethod, resettime, resetparam0)
+                
+                data.append([row, col, todoname, checked, lastchecktime, resetmethod, resettime, resetparam0])
         
-        data.append([todoname, checked, lastchecktime, resetmethod, resettime, resetparam0])
-        
-    df = pd.DataFrame(data, columns=['name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0'])
+    df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0'])
     df.to_json(file_path, orient='records', lines=True)
 
     print('저장 완료')
