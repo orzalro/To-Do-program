@@ -72,7 +72,6 @@ def save_data(app):
 
                 checked = 1 if checked else 0
                 resetmethod, resettime, resetparam0 = formatting_data(resetmethod, resettime, resetparam0)
-                
                 data.append([row, col, todoname, checked, lastchecktime, resetmethod, resettime, resetparam0])
         
     df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0'])
@@ -117,12 +116,13 @@ def weekly_reset(reset_time_input, lastcheck_str, weekday):
     weekday = int(weekday)
 
     # 선택한 요일에서 현재 요일까지의 차이 계산
-    days_since_weekday = now.weekday() - weekday + 7
+    days_since_weekday = now.weekday() - weekday
     
     # 다른 요일
-    if days_since_weekday < 7: 
+    if days_since_weekday > 0: 
         pre_reset_time = datetime.combine(now.date() - timedelta(days = days_since_weekday), reset_time)
-
+    elif days_since_weekday < 0: 
+        pre_reset_time = datetime.combine(now.date() - timedelta(days = 7 - days_since_weekday), reset_time)
     # 같은 요일
     else:
         if now.time() < reset_time: 
