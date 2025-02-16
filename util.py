@@ -62,8 +62,10 @@ def load_data(app):
                 if resetmethod == 0: checked = daily_reset(resettime, lastchecktime)
                 if resetmethod == 1: checked = weekly_reset(resettime, lastchecktime, resetparam0)
                 if resetmethod == 2: checked = monthly_reset(resettime, lastchecktime, resetparam0)
-            if resetmethod == 3:
-                checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
+                if resetmethod == 3: checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
+            else:
+                if resetmethod == 3: checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
+                checked = 0
 
             app.show_todo(row, col, todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
             

@@ -127,7 +127,7 @@ class MyApp(QWidget):
     def init_ui(self):
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
-        self.setGeometry(560, 190, 900, 600)
+        self.setGeometry(490, 190, 1000, 600) #(x, y, width, height)
 
         # 그리드 레이아웃 생성
         self.main_layout = QGridLayout()
