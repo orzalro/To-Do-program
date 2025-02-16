@@ -58,7 +58,7 @@ def load_data(app):
             # 체크가 되어있는 경우
             if checked:
                 # 체크박스 초기화 알고리즘 실행
-                # 0: daily, 1: weekly, 2: monthly
+                # 0: daily, 1: weekly, 2: monthly, 3: cycle
                 if resetmethod == 0: checked = daily_reset(resettime, lastchecktime)
                 if resetmethod == 1: checked = weekly_reset(resettime, lastchecktime, resetparam0)
                 if resetmethod == 2: checked = monthly_reset(resettime, lastchecktime, resetparam0)

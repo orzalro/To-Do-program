@@ -139,7 +139,7 @@ class AddTodoDialog(QDialog):
     def get_data(self):
         current_index = self.stacked_widget.currentIndex()
         if current_index == 0:
-            return current_index, int(self.daily_reset_time.text()), -1
+            return current_index, int(self.daily_reset_time.text()), -1, -1
         elif current_index == 1:
             return current_index, int(self.weekly_reset_time.text()), int(self.weekly_resetparam0.text()), -1
         elif current_index == 2:
