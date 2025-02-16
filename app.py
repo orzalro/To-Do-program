@@ -2,7 +2,7 @@ import sys
 import util
 import dialog as dia
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QLabel, QAbstractItemView
-
+from datetime import datetime, timedelta
 
 class DragList(QListWidget):
     # 드래그 위치에 따라 드래그드롭모드 변경
@@ -28,13 +28,14 @@ class DragList(QListWidget):
             todo_reset_method = widget.layout().itemAt(0).widget().text()
             todo_reset_time = widget.layout().itemAt(1).widget().text()
             resetparam0 = widget.layout().itemAt(2).widget().text()
+            resetparam1 = widget.layout().itemAt(3).widget().text()
 
-            todo_reset_method, todo_reset_time, resetparam0 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0)
-            self.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, checked)
+            todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
+            self.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
             source_list.remove_todo(item)
     
 
-    def add_todo(self, todo_title, reset_method, reset_time, param, checked = 0):
+    def add_todo(self, todo_title, reset_method, reset_time, param0, param1, checked = 0):
         # todo_title이 비어 있지 않으면 리스트에 추가
         if todo_title:
             item = QListWidgetItem(todo_title)
@@ -62,20 +63,43 @@ class DragList(QListWidget):
             # 초기화 알고리즘에 따라 다른 정보 출력
             if reset_method == 0:
                 methodlabel = QLabel('일간')
+                reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
+                timelabel = QLabel(reset_time)
+           
             elif reset_method == 1:
                 methodlabel = QLabel('주간')
                 weekday_dict = {0: '월요일', 1: '화요일', 2: '수요일', 3: '목요일', 4: '금요일', 5: '토요일', 6: '일요일'}
-                paramlabel = QLabel(weekday_dict[param])
+                param0label = QLabel(weekday_dict[param0])
+                reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
+                timelabel = QLabel(reset_time)
+            
             elif reset_method == 2:
                 methodlabel = QLabel('월간')
-                paramlabel = QLabel(f'{param}일')
+                param0label = QLabel(f'{param0}일')
+                reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
+                timelabel = QLabel(reset_time)
             
-            reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
-            timelabel = QLabel(reset_time)
+            elif reset_method == 3:
+                methodlabel = QLabel('주기')
+                next_reset_datetime = datetime.strptime(param1, '%Y-%m-%d %H:%M:%S') + timedelta(minutes = int(param0))
+
+                difference = next_reset_datetime - datetime.now() # 다음 초기화까지의 차이
+                if difference.days != 0:
+                    cycle_label = f'{next_reset_datetime.strftime('%H:%M')} {difference.days}일 남음'
+                else:
+                    cycle_label = f'{next_reset_datetime.strftime('%H:%M')}'
+
+                param0label = QLabel(f'{param0}') # 초기화 주기 int
+                param0label.setVisible(False)
+                param1label = QLabel(f'{param1}') # 기준 날짜 str
+                param1label.setVisible(False)
+                timelabel = QLabel(cycle_label)
+                
 
             item_layout.addWidget(methodlabel)
             item_layout.addWidget(timelabel)
-            if 'paramlabel' in locals(): item_layout.addWidget(paramlabel)
+            if 'param0label' in locals(): item_layout.addWidget(param0label)
+            if 'param1label' in locals(): item_layout.addWidget(param1label)
 
             item_layout.addWidget(checkbox)
             item_layout.addWidget(remove_button)
@@ -108,7 +132,7 @@ class MyApp(QWidget):
         # 그리드 레이아웃 생성
         self.main_layout = QGridLayout()
         self.show_grid(2, 3)
-
+        
         # 레이아웃을 창에 설정
         self.setLayout(self.main_layout)
         util.load_data(self)
@@ -119,8 +143,8 @@ class MyApp(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             # 다이얼로그에서 받은 데이터
             todo_title = dialog.title_input.text()
-            todo_reset_method, todo_reset_time, resetparam0 = dialog.get_data()
-            self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0)
+            todo_reset_method, todo_reset_time, resetparam0, resetparam1 = dialog.get_data()
+            self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1)
             util.save_data(self)
 
 
@@ -133,6 +157,8 @@ class MyApp(QWidget):
         for i in range(self.grid_row):
             for j in range(self.grid_col):
                 list_vbox = QVBoxLayout()
+                list_vbox.setSpacing(0)
+                list_vbox.setContentsMargins(0, 10, 0, 10) # (좌, 상, 우, 하) 여백
 
                 self.todo_list[f'list{i * 3 + j}'] = DragList(self)
                 self.todo_list[f'list{i * 3 + j}'].setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
@@ -146,8 +172,8 @@ class MyApp(QWidget):
                 self.main_layout.addLayout(list_vbox, i * 2, j * 2)
 
 
-    def show_todo(self, row, col,  todo_title, todo_reset_method, todo_reset_time, resetparam0, checked):
-        self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, checked)
+    def show_todo(self, row, col,  todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked):
+        self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
 
 
 app = QApplication(sys.argv)

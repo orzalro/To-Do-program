@@ -4,23 +4,39 @@ import pandas as pd
 import os
 
 
-def formatting_data(resetmethod, resettime, resetparam0):
-    method_dict = {'일간': 0, '주간': 1, '월간': 2}
+def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
+    method_dict = {'일간': 0, '주간': 1, '월간': 2, '주기': 3}
     resetmethod = method_dict[resetmethod]
-    
-    split_timestr = resettime.split(':')
-    resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])  # ex) 05:00(%M:%S) -> 300(sec)
-
     weekday_dict = {'월요일': 0, '화요일': 1, '수요일': 2, '목요일': 3, '금요일': 4, '토요일': 5, '일요일': 6}
-    if resetmethod == 0: resetparam0 = -1 # 사용안함
-    elif resetmethod == 1: resetparam0 = weekday_dict[resetparam0] # 요일
-    elif resetmethod == 2: resetparam0 = resetparam0[:-1] # 일
 
-    return resetmethod, resettime, resetparam0
+    if resetmethod == 0:
+        split_timestr = resettime.split(':')
+        resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])  # ex) 05:00(%H:%M) -> 300(Minute)
+        resetparam0 = -1 # 사용안함
+        resetparam1 = -1
+
+    elif resetmethod == 1:
+        split_timestr = resettime.split(':')
+        resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])  # ex) 05:00(%H:%M) -> 300(Minute)
+        resetparam0 = weekday_dict[resetparam0] # 요일
+        resetparam1 = -1
+
+    elif resetmethod == 2:
+        split_timestr = resettime.split(':')
+        resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])  # ex) 05:00(%H:%M) -> 300(Minute)
+        resetparam0 = resetparam0[:-1] # 일
+        resetparam1 = -1
+
+    elif resetmethod == 3: 
+        resettime = -1
+        resetparam0 = resetparam0 # 초기화 주기
+        resetparam1 = resetparam1 # 기준 날짜
+
+    return resetmethod, resettime, resetparam0, resetparam1
 
 
 # json 구성
-# ['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0']
+# ['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1']
 def load_data(app):
     # json에서 유저 일정 데이터 읽기
     file_path = 'userdata.json'
@@ -37,6 +53,7 @@ def load_data(app):
             resetmethod = df.iloc[i, 5]
             resettime = df.iloc[i, 6]
             resetparam0 = df.iloc[i, 7]
+            resetparam1 = df.iloc[i, 8]
 
             # 체크가 되어있는 경우
             if checked:
@@ -45,11 +62,10 @@ def load_data(app):
                 if resetmethod == 0: checked = daily_reset(resettime, lastchecktime)
                 if resetmethod == 1: checked = weekly_reset(resettime, lastchecktime, resetparam0)
                 if resetmethod == 2: checked = monthly_reset(resettime, lastchecktime, resetparam0)
-                app.show_todo(row, col, todoname, resetmethod, resettime, resetparam0, checked)
+            if resetmethod == 3:
+                checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
 
-            # 체크가 되어있지 않은 경우
-            else:
-                app.show_todo(row, col, todoname, resetmethod, resettime, resetparam0, checked)
+            app.show_todo(row, col, todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
             
 
 def save_data(app):
@@ -65,16 +81,17 @@ def save_data(app):
 
                 todoname = item.data(0)
                 checked = widget.layout().itemAt(widget.layout().count() - 3).widget().isChecked() # 메소드에 따라 아이템 갯수가 유동적이니 뒤에서부터 세는 방식으로 구현
-                lastchecktime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                lastchecktime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 resetmethod = widget.layout().itemAt(0).widget().text()
                 resettime = widget.layout().itemAt(1).widget().text()
                 resetparam0 = widget.layout().itemAt(2).widget().text()
+                resetparam1 = widget.layout().itemAt(3).widget().text()
 
                 checked = 1 if checked else 0
-                resetmethod, resettime, resetparam0 = formatting_data(resetmethod, resettime, resetparam0)
-                data.append([row, col, todoname, checked, lastchecktime, resetmethod, resettime, resetparam0])
+                resetmethod, resettime, resetparam0, resetparam1 = formatting_data(resetmethod, resettime, resetparam0, resetparam1)
+                data.append([row, col, todoname, checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1])
         
-    df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0'])
+    df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1'])
     df.to_json(file_path, orient='records', lines=True)
 
     print('저장 완료')
@@ -89,8 +106,8 @@ def save_data(app):
 #             monthly - 일자 + 시간 + 마지막 체크 시간, 3개
 
 
-# reset_time_input : 분 단위(0-1439), lastcheck_str : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21
-def daily_reset(reset_time_input, lastcheck_str): 
+# reset_time_input : 분 단위(0-1439), lastchecktime : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21
+def daily_reset(reset_time_input, lastchecktime): 
     now = datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
 
@@ -102,18 +119,18 @@ def daily_reset(reset_time_input, lastcheck_str):
 
     # 마지막 체크 시간이 지난번 초기화 시간 이전인지 확인
     # 지난번 초기화 시간 이후후면 체크 해제(0), 지난번 초기화 시간 이전이면 체크 유지(1)
-    lastcheck = datetime.strptime(lastcheck_str, '%Y-%m-%d %H:%M:%S')
+    lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
     if lastcheck <= pre_reset_time: 
         return 0
     else:
         return 1
 
 
-# reset_time_input : 분 단위(0-1439), lastcheck_str : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, weekday : 요일(0-6)
-def weekly_reset(reset_time_input, lastcheck_str, weekday):
+# reset_time_input : 분 단위(0-1439), lastchecktime : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, resetparam0 : 요일(0-6)
+def weekly_reset(reset_time_input, lastchecktime, resetparam0):
     now = datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
-    weekday = int(weekday)
+    weekday = int(resetparam0)
 
     # 선택한 요일에서 현재 요일까지의 차이 계산
     days_since_weekday = now.weekday() - weekday
@@ -130,18 +147,18 @@ def weekly_reset(reset_time_input, lastcheck_str, weekday):
         else:
             pre_reset_time = datetime.combine(now.date(), reset_time)
 
-    lastcheck = datetime.strptime(lastcheck_str, '%Y-%m-%d %H:%M:%S')
+    lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
     if lastcheck <= pre_reset_time: 
         return 0
     else:
         return 1
 
 
-# reset_time_input : 분 단위(0-1439), lastcheck_str : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, reset_day : 일자(1-31)
-def monthly_reset(reset_time_input, lastcheck_str, reset_day):
+# reset_time_input : 분 단위(0-1439), lastchecktime : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, resetparam0 : 일자(1-31)
+def monthly_reset(reset_time_input, lastchecktime, resetparam0):
     now = datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
-    reset_day= int(reset_day)
+    reset_day= int(resetparam0)
 
     if now.day < reset_day: # 이번달 초기화 일자를 지나지 않은 경우
         pre_reset_time = datetime.combine((now.date() - relativedelta(months = 1)).replace(day = reset_day), reset_time)
@@ -153,7 +170,7 @@ def monthly_reset(reset_time_input, lastcheck_str, reset_day):
     else: # 이번달 초기화 일자를 지난 경우
         pre_reset_time = datetime.combine(now.date().replace(day = reset_day), reset_time)
 
-    lastcheck = datetime.strptime(lastcheck_str, '%Y-%m-%d %H:%M:%S')
+    lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
     if lastcheck <= pre_reset_time: 
         return 0
     else:
@@ -164,9 +181,22 @@ def monthly_reset(reset_time_input, lastcheck_str, reset_day):
 #         1. 현재 시간이 기준 시간과 초기화 시간 사이라면 유지.
 #         2. 아니라면 초기화 하고 기준 시간을 초기화 시간으로 변경
 #         3. 변경된 기준 시간으로 새로운 초기화 시간을 계산하고, 1번으로
-        
-#         패러미터 구성
-#             기준 날짜, 기준 시간, 초기화 주기 + 마지막 체크 시간 4개
 
-#         분 단위로 구현
-#         주기별 알고리즘으로 daily weekly 구현도 가능하나, 복잡도상 살짝 손해
+#         패러미터 구성     
+#           초기화 주기, 기준 날짜 2개
+
+# resetparam0 : 분 단위, resetparam1: %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21
+def cycle_reset(resetparam0, resetparam1):
+    now = datetime.now()
+    reset_cycle = int(resetparam0)
+    base_datetime = datetime.strptime(resetparam1, '%Y-%m-%d %H:%M:%S')
+
+    next_reset_time = base_datetime + timedelta(minutes = reset_cycle)
+
+    if base_datetime < now < next_reset_time:
+        return 1, base_datetime.strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        while next_reset_time < now:
+            base_datetime += timedelta(minutes = reset_cycle)
+            next_reset_time = base_datetime + timedelta(minutes = reset_cycle)
+        return 0, base_datetime.strftime('%Y-%m-%d %H:%M:%S')
