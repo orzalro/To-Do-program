@@ -2,7 +2,7 @@ import sys
 import util
 import dialog as dia
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QLabel, QAbstractItemView
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer, QTime
 from datetime import datetime, timedelta
 
 class DragList(QListWidget):
@@ -122,6 +122,7 @@ class MyApp(QWidget):
     def __init__(self):
         super().__init__()
         self.init_ui()
+        self.auto_save()
 
 
     def init_ui(self):
@@ -172,8 +173,20 @@ class MyApp(QWidget):
                 self.main_layout.addLayout(list_vbox, i * 2, j * 2)
 
 
-    def show_todo(self, row, col,  todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked):
+    def show_todo(self, row, col,  todo_title, lastchecktime, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked):
+        self.lastchecktime = lastchecktime
         self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
+
+
+    def auto_save(self):
+        now = QTime.currentTime()
+        seconds_until_next_minute = 60 - now.second()  # 다음 00초까지 남은 시간
+        QTimer.singleShot(seconds_until_next_minute * 1000, lambda: self.run_auto_save())  # 다음 정각에 실행
+
+
+    def run_auto_save(self):
+        util.save_data(self)
+        self.auto_save()  # 다음 세이브 예약
 
 
 app = QApplication(sys.argv)

@@ -35,6 +35,21 @@ def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
     return resetmethod, resettime, resetparam0, resetparam1
 
 
+def reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1):
+    # 체크가 되어있는 경우
+    if checked:
+        # 체크박스 초기화 알고리즘 실행
+        # 0: daily, 1: weekly, 2: monthly, 3: cycle
+        if resetmethod == 0: checked = daily_reset(resettime, lastchecktime)
+        if resetmethod == 1: checked = weekly_reset(resettime, lastchecktime, resetparam0)
+        if resetmethod == 2: checked = monthly_reset(resettime, lastchecktime, resetparam0)
+        if resetmethod == 3: checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
+    else:
+        if resetmethod == 3: checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
+        checked = 0
+    return checked
+
+
 # json 구성
 # ['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1']
 def load_data(app):
@@ -55,24 +70,15 @@ def load_data(app):
             resetparam0 = df.iloc[i, 7]
             resetparam1 = df.iloc[i, 8]
 
-            # 체크가 되어있는 경우
-            if checked:
-                # 체크박스 초기화 알고리즘 실행
-                # 0: daily, 1: weekly, 2: monthly, 3: cycle
-                if resetmethod == 0: checked = daily_reset(resettime, lastchecktime)
-                if resetmethod == 1: checked = weekly_reset(resettime, lastchecktime, resetparam0)
-                if resetmethod == 2: checked = monthly_reset(resettime, lastchecktime, resetparam0)
-                if resetmethod == 3: checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
-            else:
-                if resetmethod == 3: checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
-                checked = 0
+            checked = reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
 
-            app.show_todo(row, col, todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
+            app.show_todo(row, col, todoname, lastchecktime, resetmethod, resettime, resetparam0, resetparam1, checked)
             
 
 def save_data(app):
     file_path = 'userdata.json'
     data = []
+    lastchecktime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     for row in range(app.grid_row):
         for col in range(app.grid_col):
@@ -82,17 +88,22 @@ def save_data(app):
                 widget = todo_list.itemWidget(item)
 
                 todoname = item.data(0)
-                checked = widget.layout().itemAt(widget.layout().count() - 3).widget().isChecked() # 메소드에 따라 아이템 갯수가 유동적이니 뒤에서부터 세는 방식으로 구현
-                lastchecktime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                checked = widget.layout().itemAt(widget.layout().count() - 2).widget().isChecked() # 메소드에 따라 아이템 갯수가 유동적이니 뒤에서부터 세는 방식으로 구현
+                checked = 1 if checked else 0
                 resetmethod = widget.layout().itemAt(0).widget().text()
                 resettime = widget.layout().itemAt(1).widget().text()
                 resetparam0 = widget.layout().itemAt(2).widget().text()
                 resetparam1 = widget.layout().itemAt(3).widget().text()
 
-                checked = 1 if checked else 0
                 resetmethod, resettime, resetparam0, resetparam1 = formatting_data(resetmethod, resettime, resetparam0, resetparam1)
+
+                checked = reset_check(checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
+                app.todo_list[f'list{row * 3 + col}'].itemWidget(item).layout().itemAt(widget.layout().count() - 2).widget().setChecked(checked)
+
                 data.append([row, col, todoname, checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1])
-        
+    
+    app.lastchecktime = lastchecktime
+
     df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1'])
     df.to_json(file_path, orient='records', lines=True)
 
@@ -122,7 +133,7 @@ def daily_reset(reset_time_input, lastchecktime):
     # 마지막 체크 시간이 지난번 초기화 시간 이전인지 확인
     # 지난번 초기화 시간 이후후면 체크 해제(0), 지난번 초기화 시간 이전이면 체크 유지(1)
     lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
-    if lastcheck <= pre_reset_time: 
+    if lastcheck < pre_reset_time: 
         return 0
     else:
         return 1
@@ -150,7 +161,7 @@ def weekly_reset(reset_time_input, lastchecktime, resetparam0):
             pre_reset_time = datetime.combine(now.date(), reset_time)
 
     lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
-    if lastcheck <= pre_reset_time: 
+    if lastcheck < pre_reset_time: 
         return 0
     else:
         return 1
@@ -173,7 +184,7 @@ def monthly_reset(reset_time_input, lastchecktime, resetparam0):
         pre_reset_time = datetime.combine(now.date().replace(day = reset_day), reset_time)
 
     lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
-    if lastcheck <= pre_reset_time: 
+    if lastcheck < pre_reset_time: 
         return 0
     else:
         return 1
