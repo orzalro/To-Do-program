@@ -25,7 +25,7 @@ class DragList(QListWidget):
             widget = source_list.itemWidget(item)
 
             todo_title = item.data(0)
-            checked = widget.layout().itemAt(widget.layout().count() - 3).widget().isChecked()
+            checked = widget.layout().itemAt(widget.layout().count() - 2).widget().isChecked()
             todo_reset_method = widget.layout().itemAt(0).widget().text()
             todo_reset_time = widget.layout().itemAt(1).widget().text()
             resetparam0 = widget.layout().itemAt(2).widget().text()
@@ -162,7 +162,7 @@ class MyApp(QWidget):
                 list_vbox.setContentsMargins(0, 10, 0, 10) # (좌, 상, 우, 하) 여백
 
                 self.todo_list[f'list{i * 3 + j}'] = DragList(self)
-                self.todo_list[f'list{i * 3 + j}'].setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
+                self.todo_list[f'list{i * 3 + j}'].setDragDropMode(QAbstractItemView.InternalMove)
                 list_vbox.addWidget(self.todo_list[f'list{i * 3 + j}'])
 
                 # 일정 추가 버튼
