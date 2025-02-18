@@ -59,6 +59,75 @@ class DragList(QListWidget):
         source_list.remove_todo(item)
 
         
+    def update_param(self, item, reset_method, reset_time, param0, param1, checked):
+        checkbox = QCheckBox()
+
+        if checked:
+            checkbox.setChecked(True)
+        else:
+            checkbox.setChecked(False)  # 초기 상태는 선택되지 않음
+        
+        # 디버그
+        #checkbox.clicked.connect(lambda: print(self.todo_list.row(item))) # 체크시 해당 아이템이 리스트의 몇번째 아이템인지 출력
+        #checkbox.clicked.connect(lambda: print(item.data(0))) # 체크시 해당 아이템의 이름 출력
+        #checkbox.clicked.connect(lambda: print(checkbox.checkState())) # 체크시 해당 아이템의 체크상태 출력
+        checkbox.clicked.connect(lambda: util.save_data(window)) # 체크시 save 예정
+
+        remove_button = QPushButton('X')
+        remove_button.setFixedSize(15, 15)
+        remove_button.clicked.connect(lambda: self.remove_todo(item))  # 제거 버튼 클릭 시 remove_todo 메서드 실행
+    
+        widget = QWidget()
+        item_layout = QHBoxLayout(widget)
+        item_layout.setContentsMargins(130, 0, 0, 0)
+
+        # 초기화 알고리즘에 따라 다른 정보 출력
+        if reset_method == 0:
+            methodlabel = QLabel('일간')
+            reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
+            timelabel = QLabel(reset_time)
+        
+        elif reset_method == 1:
+            methodlabel = QLabel('주간')
+            weekday_dict = {0: '월요일', 1: '화요일', 2: '수요일', 3: '목요일', 4: '금요일', 5: '토요일', 6: '일요일'}
+            param0label = QLabel(weekday_dict[param0])
+            reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
+            timelabel = QLabel(reset_time)
+        
+        elif reset_method == 2:
+            methodlabel = QLabel('월간')
+            param0label = QLabel(f'{param0}일')
+            reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
+            timelabel = QLabel(reset_time)
+        
+        elif reset_method == 3:
+            methodlabel = QLabel('주기')
+            next_reset_datetime = datetime.strptime(param1, '%Y-%m-%d %H:%M:%S') + timedelta(minutes = int(param0))
+
+            difference = next_reset_datetime - datetime.now() # 다음 초기화까지의 차이
+            if difference.days != 0:
+                cycle_label = f'{next_reset_datetime.strftime('%H:%M')} {difference.days}일 남음'
+            else:
+                cycle_label = f'{next_reset_datetime.strftime('%H:%M')}'
+
+            param0label = QLabel(f'{param0}') # 초기화 주기 int
+            param0label.setVisible(False)
+            param1label = QLabel(f'{param1}') # 기준 날짜 str
+            param1label.setVisible(False)
+            timelabel = QLabel(cycle_label)
+            
+
+        item_layout.addWidget(methodlabel)
+        item_layout.addWidget(timelabel)
+        if 'param0label' in locals(): item_layout.addWidget(param0label)
+        if 'param1label' in locals(): item_layout.addWidget(param1label)
+
+        item_layout.addWidget(checkbox, alignment= Qt.AlignmentFlag.AlignRight)
+        item_layout.addWidget(remove_button)
+        
+        self.setItemWidget(item, widget)
+
+
     def add_todo(self, todo_title, reset_method, reset_time, param0, param1, checked = 0, row = -1):
         # todo_title이 비어 있지 않으면 리스트에 추가
         if todo_title:
@@ -67,73 +136,9 @@ class DragList(QListWidget):
             else:
                 row = row
             item = QListWidgetItem(todo_title)
-            checkbox = QCheckBox()
-
-            if checked:
-                checkbox.setChecked(True)
-            else:
-                checkbox.setChecked(False)  # 초기 상태는 선택되지 않음
-            
-            # 디버그
-            #checkbox.clicked.connect(lambda: print(self.todo_list.row(item))) # 체크시 해당 아이템이 리스트의 몇번째 아이템인지 출력
-            #checkbox.clicked.connect(lambda: print(item.data(0))) # 체크시 해당 아이템의 이름 출력
-            #checkbox.clicked.connect(lambda: print(checkbox.checkState())) # 체크시 해당 아이템의 체크상태 출력
-            checkbox.clicked.connect(lambda: util.save_data(window)) # 체크시 save 예정
-
-            remove_button = QPushButton('X')
-            remove_button.setFixedSize(15, 15)
-            remove_button.clicked.connect(lambda: self.remove_todo(item))  # 제거 버튼 클릭 시 remove_todo 메서드 실행
-
-            widget = QWidget()
-            item_layout = QHBoxLayout(widget)
-            item_layout.setContentsMargins(130, 0, 0, 0)
-
-            # 초기화 알고리즘에 따라 다른 정보 출력
-            if reset_method == 0:
-                methodlabel = QLabel('일간')
-                reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
-                timelabel = QLabel(reset_time)
-           
-            elif reset_method == 1:
-                methodlabel = QLabel('주간')
-                weekday_dict = {0: '월요일', 1: '화요일', 2: '수요일', 3: '목요일', 4: '금요일', 5: '토요일', 6: '일요일'}
-                param0label = QLabel(weekday_dict[param0])
-                reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
-                timelabel = QLabel(reset_time)
-            
-            elif reset_method == 2:
-                methodlabel = QLabel('월간')
-                param0label = QLabel(f'{param0}일')
-                reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
-                timelabel = QLabel(reset_time)
-            
-            elif reset_method == 3:
-                methodlabel = QLabel('주기')
-                next_reset_datetime = datetime.strptime(param1, '%Y-%m-%d %H:%M:%S') + timedelta(minutes = int(param0))
-
-                difference = next_reset_datetime - datetime.now() # 다음 초기화까지의 차이
-                if difference.days != 0:
-                    cycle_label = f'{next_reset_datetime.strftime('%H:%M')} {difference.days}일 남음'
-                else:
-                    cycle_label = f'{next_reset_datetime.strftime('%H:%M')}'
-
-                param0label = QLabel(f'{param0}') # 초기화 주기 int
-                param0label.setVisible(False)
-                param1label = QLabel(f'{param1}') # 기준 날짜 str
-                param1label.setVisible(False)
-                timelabel = QLabel(cycle_label)
-                
-
-            item_layout.addWidget(methodlabel)
-            item_layout.addWidget(timelabel)
-            if 'param0label' in locals(): item_layout.addWidget(param0label)
-            if 'param1label' in locals(): item_layout.addWidget(param1label)
-
-            item_layout.addWidget(checkbox, alignment= Qt.AlignmentFlag.AlignRight)
-            item_layout.addWidget(remove_button)
 
             self.insertItem(row, item)
-            self.setItemWidget(item, widget)
+            self.update_param(item, reset_method, reset_time, param0, param1, checked)
             
         else:
             print("할 일을 입력해주세요.")
@@ -172,7 +177,14 @@ class MyApp(QWidget):
             # 다이얼로그에서 받은 데이터
             todo_title = dialog.title_input.text()
             todo_reset_method, todo_reset_time, resetparam0, resetparam1 = dialog.get_data()
-            self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1)
+            todo_list = self.todo_list[f'list{row * 3 + col}']
+            todo_list.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1)
+
+            if todo_reset_method == 3:
+                item = todo_list.item(todo_list.count() - 1)
+                checked, resetparam1 = util.reset_check(0, self.lastchecktime, todo_reset_method, todo_reset_time, resetparam0, resetparam1)
+                todo_list.update_param(item, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
+
             util.save_data(self)
 
 

@@ -47,7 +47,7 @@ def reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, res
     else:
         if resetmethod == 3: checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
         checked = 0
-    return checked
+    return checked, resetparam1
 
 
 # json 구성
@@ -70,12 +70,14 @@ def load_data(app):
             resetparam0 = df.iloc[i, 7]
             resetparam1 = df.iloc[i, 8]
 
-            checked = reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
+            checked, resetparam1 = reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
 
             app.show_todo(row, col, todoname, lastchecktime, resetmethod, resettime, resetparam0, resetparam1, checked)
             
 
 def save_data(app):
+    start_time = datetime.now()
+
     file_path = 'userdata.json'
     data = []
     lastchecktime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -88,8 +90,8 @@ def save_data(app):
                 widget = todo_list.itemWidget(item)
 
                 todoname = item.data(0)
-                checked = widget.layout().itemAt(widget.layout().count() - 2).widget().isChecked() # 메소드에 따라 아이템 갯수가 유동적이니 뒤에서부터 세는 방식으로 구현
-                checked = 1 if checked else 0
+                box_checked = widget.layout().itemAt(widget.layout().count() - 2).widget().isChecked() # 메소드에 따라 아이템 갯수가 유동적이니 뒤에서부터 세는 방식으로 구현
+                box_checked = 1 if box_checked else 0
                 resetmethod = widget.layout().itemAt(0).widget().text()
                 resettime = widget.layout().itemAt(1).widget().text()
                 resetparam0 = widget.layout().itemAt(2).widget().text()
@@ -97,8 +99,8 @@ def save_data(app):
 
                 resetmethod, resettime, resetparam0, resetparam1 = formatting_data(resetmethod, resettime, resetparam0, resetparam1)
 
-                checked = reset_check(checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
-                app.todo_list[f'list{row * 3 + col}'].itemWidget(item).layout().itemAt(widget.layout().count() - 2).widget().setChecked(checked)
+                checked, resetparam1 = reset_check(box_checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
+                if checked != box_checked: todo_list.update_param(item, resetmethod, resettime, resetparam0, resetparam1, checked)
 
                 data.append([row, col, todoname, checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1])
     
@@ -107,7 +109,9 @@ def save_data(app):
     df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1'])
     df.to_json(file_path, orient='records', lines=True)
 
-    print('저장 완료')
+    end_time = datetime.now()
+    elapsed_time = end_time - start_time
+    print(f'[{end_time.hour:02d}:{end_time.minute:02d}] 저장 완료, 소요 시간: {elapsed_time.total_seconds():.6f}s')
 
 
 #     1. 시간별(daily), 요일별(weekly), 매 달 ~일 등(monthly)
