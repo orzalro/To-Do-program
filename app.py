@@ -106,29 +106,35 @@ class DragList(QListWidget):
 
             difference = next_reset_datetime - datetime.now() # 다음 초기화까지의 차이
             if difference.days != 0:
-                cycle_label = f'{next_reset_datetime.strftime('%H:%M')} {difference.days}일 남음'
+                cycle_label = f'{next_reset_datetime.strftime('%H:%M')}  {difference.days}일 남음'
             else:
                 cycle_label = f'{next_reset_datetime.strftime('%H:%M')}'
 
             param0label = QLabel(f'{param0}') # 초기화 주기 int
             param1label = QLabel(f'{param1}') # 기준 날짜 str
+            param0label.setVisible(False)
+            param1label.setVisible(False)
+
             timelabel = QLabel(cycle_label)
             
-
         item_layout.addWidget(methodlabel)
         item_layout.addWidget(timelabel)
         
-        if 'param0label' not in locals(): param0label = QLabel('-1')
-        if 'param1label' not in locals(): param1label = QLabel('-1')    
-        param0label.setVisible(False)
-        param1label.setVisible(False)
+        if 'param0label' not in locals():
+            param0label = QLabel('-1')
+            param0label.setVisible(False)
+        if 'param1label' not in locals():
+            param1label = QLabel('-1')
+            param1label.setVisible(False)
         item_layout.addWidget(param0label)
         item_layout.addWidget(param1label)
 
         item_layout.addStretch(1)
         item_layout.addWidget(checkbox)
         item_layout.addWidget(remove_button)
-        
+
+        item_layout.setSpacing(8)
+
         self.setItemWidget(item, widget)
 
 
