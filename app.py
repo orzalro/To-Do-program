@@ -111,18 +111,22 @@ class DragList(QListWidget):
                 cycle_label = f'{next_reset_datetime.strftime('%H:%M')}'
 
             param0label = QLabel(f'{param0}') # 초기화 주기 int
-            param0label.setVisible(False)
             param1label = QLabel(f'{param1}') # 기준 날짜 str
-            param1label.setVisible(False)
             timelabel = QLabel(cycle_label)
             
 
         item_layout.addWidget(methodlabel)
         item_layout.addWidget(timelabel)
-        if 'param0label' in locals(): item_layout.addWidget(param0label)
-        if 'param1label' in locals(): item_layout.addWidget(param1label)
+        
+        if 'param0label' not in locals(): param0label = QLabel('-1')
+        if 'param1label' not in locals(): param1label = QLabel('-1')    
+        param0label.setVisible(False)
+        param1label.setVisible(False)
+        item_layout.addWidget(param0label)
+        item_layout.addWidget(param1label)
 
-        item_layout.addWidget(checkbox, alignment= Qt.AlignmentFlag.AlignRight)
+        item_layout.addStretch(1)
+        item_layout.addWidget(checkbox)
         item_layout.addWidget(remove_button)
         
         self.setItemWidget(item, widget)
@@ -141,7 +145,7 @@ class DragList(QListWidget):
             self.update_param(item, reset_method, reset_time, param0, param1, checked)
             
         else:
-            print("할 일을 입력해주세요.")
+            print('할 일을 입력해주세요.')
 
 
     def remove_todo(self, item):
