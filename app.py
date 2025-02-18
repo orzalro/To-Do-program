@@ -2,6 +2,7 @@ import sys
 import util
 import dialog as dia
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QLabel, QAbstractItemView
+from PyQt5.QtCore import Qt
 from datetime import datetime, timedelta
 
 class DragList(QListWidget):
@@ -101,9 +102,8 @@ class DragList(QListWidget):
             if 'param0label' in locals(): item_layout.addWidget(param0label)
             if 'param1label' in locals(): item_layout.addWidget(param1label)
 
-            item_layout.addWidget(checkbox)
+            item_layout.addWidget(checkbox, alignment= Qt.AlignmentFlag.AlignRight)
             item_layout.addWidget(remove_button)
-            item_layout.addStretch(1)
 
             self.addItem(item)
             self.setItemWidget(item, widget)
