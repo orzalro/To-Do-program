@@ -14,16 +14,38 @@ class DragList(QListWidget):
             self.setDragDropMode(QAbstractItemView.DragDrop)
         super().dragEnterEvent(event)
     
-    # 다른 리스트에 드롭시 드롭이벤트 오버라이드
+
+    # 드롭이벤트 오버라이드
     def dropEvent(self, event):
         source_list = event.source()
-        if source_list is self:
-            super().dropEvent(event) #같은 자리 드롭시 위젯 사라지는 문제 있음. 같은 자리인지 확인하는 코드 필요
-            util.save_data(window)
-        else:
-            item = source_list.currentItem()
-            widget = source_list.itemWidget(item)
+        item = source_list.currentItem()
+        widget = source_list.itemWidget(item)
 
+        drop_pos = event.pos()  # 드롭된 위치의 좌표
+        item_at_pos = self.itemAt(drop_pos)  # 드롭된 위치에 해당하는 아이템
+
+        if item_at_pos:
+            # 아이템의 절반 위치를 기준으로 앞/뒤 삽입 결정
+            item_widget = self.itemWidget(item_at_pos)
+            item_rect = item_widget.geometry()
+            item_center = item_rect.top() + item_rect.height() / 2  # 아이템의 중간 좌표
+
+            # 드롭된 위치가 아이템의 상단 절반에 위치하면 해당 아이템 앞에 삽입
+            if drop_pos.y() < item_center:
+                row = self.row(item_at_pos)
+            else:
+                # 드롭된 위치가 하단 절반에 위치하면 해당 아이템 뒤에 삽입
+                row = self.row(item_at_pos) + 1
+        else:
+            # 드롭된 위치에 아이템이 없다면, 마지막 아이템의 다음 위치
+            row = self.count()
+
+        if source_list is self: # 같은 블록내에서 드롭시
+            new_item = QListWidgetItem(item.text())
+            self.insertItem(row, new_item)
+            self.setItemWidget(new_item, widget)
+
+        else: # 다른 블록으로 드롭시
             todo_title = item.data(0)
             checked = widget.layout().itemAt(widget.layout().count() - 2).widget().isChecked()
             todo_reset_method = widget.layout().itemAt(0).widget().text()
@@ -32,13 +54,18 @@ class DragList(QListWidget):
             resetparam1 = widget.layout().itemAt(3).widget().text()
 
             todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
-            self.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
-            source_list.remove_todo(item)
-    
+            self.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked, row)
 
-    def add_todo(self, todo_title, reset_method, reset_time, param0, param1, checked = 0):
+        source_list.remove_todo(item)
+
+        
+    def add_todo(self, todo_title, reset_method, reset_time, param0, param1, checked = 0, row = -1):
         # todo_title이 비어 있지 않으면 리스트에 추가
         if todo_title:
+            if row == -1:
+                row = self.count()
+            else:
+                row = row
             item = QListWidgetItem(todo_title)
             checkbox = QCheckBox()
 
@@ -105,7 +132,7 @@ class DragList(QListWidget):
             item_layout.addWidget(checkbox, alignment= Qt.AlignmentFlag.AlignRight)
             item_layout.addWidget(remove_button)
 
-            self.addItem(item)
+            self.insertItem(row, item)
             self.setItemWidget(item, widget)
             
         else:
