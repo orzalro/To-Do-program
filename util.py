@@ -100,7 +100,7 @@ def save_data(app):
                 resetmethod, resettime, resetparam0, resetparam1 = formatting_data(resetmethod, resettime, resetparam0, resetparam1)
 
                 checked, resetparam1 = reset_check(box_checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
-                if checked != box_checked: todo_list.update_param(item, resetmethod, resettime, resetparam0, resetparam1, checked)
+                if checked != box_checked or resetmethod == 3: todo_list.update_param(item, resetmethod, resettime, resetparam0, resetparam1, checked)
 
                 data.append([row, col, todoname, checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1])
     

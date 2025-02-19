@@ -190,11 +190,6 @@ class MyApp(QWidget):
             todo_list = self.todo_list[f'list{row * 3 + col}']
             todo_list.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1)
 
-            if todo_reset_method == 3:
-                item = todo_list.item(todo_list.count() - 1)
-                checked, resetparam1 = util.reset_check(0, self.lastchecktime, todo_reset_method, todo_reset_time, resetparam0, resetparam1)
-                todo_list.update_param(item, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
-
             util.save_data(self)
 
 
