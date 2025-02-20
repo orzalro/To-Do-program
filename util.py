@@ -2,6 +2,30 @@ from datetime import datetime, time, timedelta
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import os
+import configparser
+
+
+def write_config(app):
+    app.config.set('Settings', 'window_width', str(app.config.getint('Settings', 'window_width', fallback = 1000)))
+    app.config.set('Settings', 'window_height', str(app.config.getint('Settings', 'window_height', fallback = 600)))
+    app.config.set('Settings', 'grid_col', str(app.config.getint('Settings', 'grid_col', fallback = 3)))
+    app.config.set('Settings', 'grid_row', str(app.config.getint('Settings', 'grid_row', fallback = 2)))
+    with open('config.ini', 'w') as configfile:
+        app.config.write(configfile)
+
+
+def read_config(app):
+    app.config = configparser.ConfigParser()
+    if os.path.exists('config.ini'):
+        app.config.read('config.ini')
+    else:
+        app.config['Settings'] = {}
+        write_config(app)
+        read_config(app)
+    app.window_width = app.config.getint('Settings', 'window_width', fallback = 1000)
+    app.window_height = app.config.getint('Settings', 'window_height', fallback = 600)
+    app.grid_col = app.config.getint('Settings', 'grid_col', fallback = 3)
+    app.grid_row = app.config.getint('Settings', 'grid_row', fallback = 2)
 
 
 def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
@@ -76,6 +100,7 @@ def load_data(app):
             
 
 def save_data(app):
+    write_config(app)
     start_time = datetime.now()
 
     file_path = 'userdata.json'

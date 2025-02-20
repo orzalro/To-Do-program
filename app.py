@@ -1,8 +1,8 @@
 import sys
 import util
 import dialog as dia
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QLabel, QAbstractItemView
-from PyQt5.QtCore import Qt, QTimer, QTime
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QDialog, QLabel, QAbstractItemView, QAction, QMainWindow, QMessageBox
+from PyQt5.QtCore import QTimer, QTime
 from datetime import datetime, timedelta
 
 class DragList(QListWidget):
@@ -160,24 +160,38 @@ class DragList(QListWidget):
         util.save_data(window)
 
 
-class MyApp(QWidget):
+class MyApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.init_ui()
         self.auto_save()
+        util.read_config(self)
 
 
     def init_ui(self):
+        exitAction = QAction('Exit', self)
+        exitAction.setShortcut('Ctrl+W')
+        exitAction.triggered.connect(self.close)
+
+        menubar = self.menuBar()
+        menubar.setNativeMenuBar(False)
+        filemenu = menubar.addMenu('&File')
+        filemenu.addAction(exitAction)
+        configmenu = menubar.addMenu('&Config')
+
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
-        self.setGeometry(490, 190, 1000, 600) #(x, y, width, height)
+        self.setGeometry(490, 190, self.window_width, self.window_height) #(x, y, width, height)
+
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
 
         # 그리드 레이아웃 생성
-        self.main_layout = QGridLayout()
-        self.show_grid(2, 3)
+        self.central_widget.main_layout = QGridLayout()
+        self.show_grid()
         
-        # 레이아웃을 창에 설정
-        self.setLayout(self.main_layout)
+          # 레이아웃을 창에 설정
+        self.central_widget.setLayout(self.central_widget.main_layout)
         util.load_data(self)
 
 
@@ -193,10 +207,7 @@ class MyApp(QWidget):
             util.save_data(self)
 
 
-    def show_grid(self, row, col):
-        self.grid_row = row
-        self.grid_col = col
-        
+    def show_grid(self):
         # 일정 리스트 (DragList(QListWidget))
         self.todo_list = {}
         for i in range(self.grid_row):
@@ -214,12 +225,19 @@ class MyApp(QWidget):
                 add_button.clicked.connect(lambda _, row = i, col = j: self.open_add_todo_dialog(row, col)) # 버튼 클릭 시 add_todo 메소드 실행을 위한 정보 입력을 받는 다이얼로그 창을 띄움
                 list_vbox.addWidget(add_button)
 
-                self.main_layout.addLayout(list_vbox, i * 2, j * 2)
+                self.central_widget.main_layout.addLayout(list_vbox, i * 2, j * 2)
 
 
     def show_todo(self, row, col,  todo_title, lastchecktime, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked):
         self.lastchecktime = lastchecktime
         self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
+
+
+    def resizeEvent(self, event):
+        # 창 크기가 변경될 때마다 현재 크기를 저장
+        self.config['Settings']['window_width'] = str(self.width())
+        self.config['Settings']['window_height'] = str(self.height())
+        super().resizeEvent(event)
 
 
     def auto_save(self):
@@ -231,6 +249,19 @@ class MyApp(QWidget):
     def run_auto_save(self):
         util.save_data(self)
         self.auto_save()  # 다음 세이브 예약
+    
+
+    def closeEvent(self, event):
+        util.save_data(self)
+
+        # # 메시지박스를 띄워 사용자에게 확인 요청
+        # reply = QMessageBox.question(self, '종료 확인', '종료하시겠습니까?', 
+        #                              QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        
+        # if reply == QMessageBox.Yes:
+        #     event.accept()  # 창을 종료
+        # else:
+        #     event.ignore()  # 창을 종료하지 않음
 
 
 app = QApplication(sys.argv)
