@@ -163,9 +163,9 @@ class DragList(QListWidget):
 class MyApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        util.read_config(self)
         self.init_ui()
         self.auto_save()
-        util.read_config(self)
 
 
     def init_ui(self):
