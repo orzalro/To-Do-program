@@ -6,19 +6,21 @@ import configparser
 
 
 def write_config(app):
+    file_path = 'data/config.ini'
     app.config.set('Settings', 'window_width', str(app.config.getint('Settings', 'window_width', fallback = 1000)))
     app.config.set('Settings', 'window_height', str(app.config.getint('Settings', 'window_height', fallback = 600)))
     app.config.set('Settings', 'grid_col', str(app.config.getint('Settings', 'grid_col', fallback = 3)))
     app.config.set('Settings', 'grid_row', str(app.config.getint('Settings', 'grid_row', fallback = 2)))
     app.config.set('Variables', 'lastchecktime', str(app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))))
-    with open('config.ini', 'w') as configfile:
+    with open(file_path, 'w') as configfile:
         app.config.write(configfile)
 
 
 def read_config(app):
+    file_path = 'data/config.ini'
     app.config = configparser.ConfigParser()
-    if os.path.exists('config.ini'):
-        app.config.read('config.ini')
+    if os.path.exists(file_path):
+        app.config.read(file_path)
     else:
         app.config['Settings'] = {}
         app.config['Variables'] = {}
@@ -81,7 +83,7 @@ def reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, res
 # ['row', 'col', 'name', 'checked', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1']
 def load_data(app):
     # json에서 유저 일정 데이터 읽기
-    file_path = 'userdata.json'
+    file_path = 'data/userdata.json'
     if os.path.exists(file_path):
         df = pd.read_json(file_path, orient='records', lines=True)
 
@@ -104,7 +106,7 @@ def load_data(app):
 def save_data(app):
     start_time = datetime.now()
 
-    file_path = 'userdata.json'
+    file_path = 'data/userdata.json'
     data = []
 
     for row in range(app.grid_row):
