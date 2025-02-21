@@ -132,10 +132,12 @@ def save_data(app):
     df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1'])
     df.to_json(file_path, orient='records', lines=True)
 
+    # 마지막체크시간 config에 저장
     app.config['Variables']['lastchecktime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     write_config(app)
     app.lastchecktime = app.config.get('Variables', 'lastchecktime')
 
+    # save_data() 소요 시간 체크
     end_time = datetime.now()
     elapsed_time = end_time - start_time
     print(f'[{end_time.hour:02d}:{end_time.minute:02d}] 저장 완료, 소요 시간: {elapsed_time.total_seconds():.6f}s')
