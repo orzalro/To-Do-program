@@ -5,12 +5,25 @@ import os
 import configparser
 
 
+def update_config(app, section, key, value):
+    #config 값을 업데이트하고 즉시 저장하는 함수
+    app.config.set(section, key, str(value))  # 문자열로 변환하여 저장
+    setattr(app, f'{key}', value)
+
+    # 변경된 설정을 config.ini 파일에 저장
+    with open('data/config.ini', 'w') as configfile:
+        app.config.write(configfile)
+
+    print(f'설정 변경됨: [{section}] {key} = {value}')  # 디버깅용
+
+
 def write_config(app):
     file_path = 'data/config.ini'
     app.config.set('Settings', 'window_width', str(app.config.getint('Settings', 'window_width', fallback = 1000)))
     app.config.set('Settings', 'window_height', str(app.config.getint('Settings', 'window_height', fallback = 600)))
     app.config.set('Settings', 'grid_col', str(app.config.getint('Settings', 'grid_col', fallback = 3)))
     app.config.set('Settings', 'grid_row', str(app.config.getint('Settings', 'grid_row', fallback = 2)))
+    app.config.set('Settings', 'remove_todo_alert', str(app.config.getint('Settings', 'remove_todo_alert', fallback = 0)))
     app.config.set('Variables', 'lastchecktime', str(app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))))
     with open(file_path, 'w') as configfile:
         app.config.write(configfile)
@@ -30,6 +43,7 @@ def read_config(app):
     app.window_height = app.config.getint('Settings', 'window_height', fallback = 600)
     app.grid_col = app.config.getint('Settings', 'grid_col', fallback = 3)
     app.grid_row = app.config.getint('Settings', 'grid_row', fallback = 2)
+    app.remove_todo_alert = app.config.getint('Settings', 'remove_todo_alert', fallback = 0)
     app.lastchecktime = app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 

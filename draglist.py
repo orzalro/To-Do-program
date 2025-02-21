@@ -1,5 +1,5 @@
 import util
-from PyQt5.QtWidgets import QWidget, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QLabel, QAbstractItemView
+from PyQt5.QtWidgets import QWidget, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QLabel, QAbstractItemView, QMessageBox
 from datetime import datetime, timedelta
 
 class DragList(QListWidget):
@@ -156,6 +156,14 @@ class DragList(QListWidget):
 
 
     def remove_todo(self, item):
-        row = self.row(item)
-        self.takeItem(row)  # 리스트에서 해당 항목 제거
-        util.save_data(self.parent)
+        # 설정에 따라 삭제 전 한번 더 확인
+        if self.parent.remove_todo_alert == 1:
+            reply = QMessageBox.question(self, '삭제 확인', '삭제하시겠습니까?', QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if reply == QMessageBox.Yes:
+                row = self.row(item)
+                self.takeItem(row)
+                util.save_data(self.parent)
+        else:
+            row = self.row(item)
+            self.takeItem(row)
+            util.save_data(self.parent)

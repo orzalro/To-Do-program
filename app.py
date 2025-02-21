@@ -2,8 +2,8 @@ import sys
 import util
 import dialog as dia
 import draglist
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow, QMessageBox
-from PyQt5.QtCore import QTimer, QTime
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow, QCheckBox, QWidgetAction, QMessageBox
+from PyQt5.QtCore import Qt, QTimer, QTime
 
 
 class MyApp(QMainWindow):
@@ -15,15 +15,28 @@ class MyApp(QMainWindow):
 
 
     def init_ui(self):
-        exitAction = QAction('Exit', self)
-        exitAction.setShortcut('Ctrl+W')
-        exitAction.triggered.connect(self.close)
-
+        # 메뉴바 생성 및 File 메뉴 생성
         menubar = self.menuBar()
         menubar.setNativeMenuBar(False)
         filemenu = menubar.addMenu('&File')
+
+        # Exit 액션 생성
+        exitAction = QAction('Exit', self)
+        exitAction.setShortcut('Ctrl+W')
+        exitAction.triggered.connect(self.close)
         filemenu.addAction(exitAction)
+
+        # Config 메뉴 생성
         configmenu = menubar.addMenu('&Config')
+
+        # 삭제시 확인 옵션 체크박스 생성
+        remove_todo_alert_checkbox = QCheckBox('일정 삭제시 한번 더 확인', self)
+        remove_todo_alert_checkbox.setChecked(self.remove_todo_alert)
+        remove_todo_alert_checkbox.setLayoutDirection(Qt.RightToLeft)
+        remove_todo_alert_checkbox.clicked.connect(lambda: util.update_config(self, 'Settings', 'remove_todo_alert', 1 if remove_todo_alert_checkbox.isChecked() else 0))
+        action = QWidgetAction(self)
+        action.setDefaultWidget(remove_todo_alert_checkbox)
+        configmenu.addAction(action)
 
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
