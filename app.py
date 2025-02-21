@@ -228,8 +228,7 @@ class MyApp(QMainWindow):
                 self.central_widget.main_layout.addLayout(list_vbox, i * 2, j * 2)
 
 
-    def show_todo(self, row, col,  todo_title, lastchecktime, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked):
-        self.lastchecktime = lastchecktime
+    def show_todo(self, row, col,  todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked):
         self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
 
 

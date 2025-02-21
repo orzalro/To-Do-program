@@ -10,6 +10,7 @@ def write_config(app):
     app.config.set('Settings', 'window_height', str(app.config.getint('Settings', 'window_height', fallback = 600)))
     app.config.set('Settings', 'grid_col', str(app.config.getint('Settings', 'grid_col', fallback = 3)))
     app.config.set('Settings', 'grid_row', str(app.config.getint('Settings', 'grid_row', fallback = 2)))
+    app.config.set('Variables', 'lastchecktime', str(app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))))
     with open('config.ini', 'w') as configfile:
         app.config.write(configfile)
 
@@ -20,12 +21,14 @@ def read_config(app):
         app.config.read('config.ini')
     else:
         app.config['Settings'] = {}
+        app.config['Variables'] = {}
         write_config(app)
         read_config(app)
     app.window_width = app.config.getint('Settings', 'window_width', fallback = 1000)
     app.window_height = app.config.getint('Settings', 'window_height', fallback = 600)
     app.grid_col = app.config.getint('Settings', 'grid_col', fallback = 3)
     app.grid_row = app.config.getint('Settings', 'grid_row', fallback = 2)
+    app.lastchecktime = app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 
 def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
@@ -75,7 +78,7 @@ def reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, res
 
 
 # json 구성
-# ['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1']
+# ['row', 'col', 'name', 'checked', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1']
 def load_data(app):
     # json에서 유저 일정 데이터 읽기
     file_path = 'userdata.json'
@@ -88,24 +91,21 @@ def load_data(app):
             col = df.iloc[i, 1]
             todoname = df.iloc[i, 2]
             checked = df.iloc[i, 3]
-            lastchecktime = df.iloc[i, 4]
-            resetmethod = df.iloc[i, 5]
-            resettime = df.iloc[i, 6]
-            resetparam0 = df.iloc[i, 7]
-            resetparam1 = df.iloc[i, 8]
+            resetmethod = df.iloc[i, 4]
+            resettime = df.iloc[i, 5]
+            resetparam0 = df.iloc[i, 6]
+            resetparam1 = df.iloc[i, 7]
 
-            checked, resetparam1 = reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
+            checked, resetparam1 = reset_check(checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
 
-            app.show_todo(row, col, todoname, lastchecktime, resetmethod, resettime, resetparam0, resetparam1, checked)
+            app.show_todo(row, col, todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
             
 
 def save_data(app):
-    write_config(app)
     start_time = datetime.now()
 
     file_path = 'userdata.json'
     data = []
-    lastchecktime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     for row in range(app.grid_row):
         for col in range(app.grid_col):
@@ -127,12 +127,14 @@ def save_data(app):
                 checked, resetparam1 = reset_check(box_checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
                 if checked != box_checked or resetmethod == 3: todo_list.update_param(item, resetmethod, resettime, resetparam0, resetparam1, checked)
 
-                data.append([row, col, todoname, checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1])
-    
-    app.lastchecktime = lastchecktime
+                data.append([row, col, todoname, checked, resetmethod, resettime, resetparam0, resetparam1])
 
-    df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'lastchecktime', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1'])
+    df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1'])
     df.to_json(file_path, orient='records', lines=True)
+
+    app.config['Variables']['lastchecktime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    write_config(app)
+    app.lastchecktime = app.config.get('Variables', 'lastchecktime')
 
     end_time = datetime.now()
     elapsed_time = end_time - start_time
