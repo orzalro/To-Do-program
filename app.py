@@ -1,7 +1,7 @@
 import sys
 import util
 import dialog as dia
-import custom_class
+import draglist
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow, QMessageBox
 from PyQt5.QtCore import QTimer, QTime
 
@@ -62,7 +62,7 @@ class MyApp(QMainWindow):
                 list_vbox.setSpacing(0)
                 list_vbox.setContentsMargins(0, 10, 0, 10) # (좌, 상, 우, 하) 여백
 
-                self.todo_list[f'list{i * 3 + j}'] = custom_class.DragList(self)
+                self.todo_list[f'list{i * 3 + j}'] = draglist.DragList(self)
                 self.todo_list[f'list{i * 3 + j}'].setDragDropMode(QAbstractItemView.InternalMove)
                 list_vbox.addWidget(self.todo_list[f'list{i * 3 + j}'])
 
