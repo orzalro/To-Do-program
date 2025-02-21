@@ -38,6 +38,15 @@ class MyApp(QMainWindow):
         action.setDefaultWidget(remove_todo_alert_checkbox)
         configmenu.addAction(action)
 
+        # 일정 남은 기한 표시 옵션 체크박스 생성
+        show_remaining_time_checkbox = QCheckBox('일정 남은 기한 표시', self)
+        show_remaining_time_checkbox.setChecked(self.show_remaining_time)
+        show_remaining_time_checkbox.setLayoutDirection(Qt.RightToLeft)
+        show_remaining_time_checkbox.clicked.connect(lambda: util.update_config(self, 'Settings', 'show_remaining_time', 1 if show_remaining_time_checkbox.isChecked() else 0))
+        action = QWidgetAction(self)
+        action.setDefaultWidget(show_remaining_time_checkbox)
+        configmenu.addAction(action)
+
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
         self.setGeometry(490, 190, self.window_width, self.window_height) #(x, y, width, height)

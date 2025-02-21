@@ -3,7 +3,7 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 import os
 import configparser
-
+from PyQt5.QtWidgets import QCheckBox, QLabel
 
 def update_config(app, section, key, value):
     #config 값을 업데이트하고 즉시 저장하는 함수
@@ -24,6 +24,7 @@ def write_config(app):
     app.config.set('Settings', 'grid_col', str(app.config.getint('Settings', 'grid_col', fallback = 3)))
     app.config.set('Settings', 'grid_row', str(app.config.getint('Settings', 'grid_row', fallback = 2)))
     app.config.set('Settings', 'remove_todo_alert', str(app.config.getint('Settings', 'remove_todo_alert', fallback = 0)))
+    app.config.set('Settings', 'show_remaining_time', str(app.config.getint('Settings', 'show_remaining_time', fallback = 0)))
     app.config.set('Variables', 'lastchecktime', str(app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))))
     with open(file_path, 'w') as configfile:
         app.config.write(configfile)
@@ -44,6 +45,7 @@ def read_config(app):
     app.grid_col = app.config.getint('Settings', 'grid_col', fallback = 3)
     app.grid_row = app.config.getint('Settings', 'grid_row', fallback = 2)
     app.remove_todo_alert = app.config.getint('Settings', 'remove_todo_alert', fallback = 0)
+    app.show_remaining_time = app.config.getint('Settings', 'show_remaining_time', fallback = 0)
     app.lastchecktime = app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 
@@ -131,12 +133,12 @@ def save_data(app):
                 widget = todo_list.itemWidget(item)
 
                 todoname = item.data(0)
-                box_checked = widget.layout().itemAt(widget.layout().count() - 2).widget().isChecked() # 메소드에 따라 아이템 갯수가 유동적이니 뒤에서부터 세는 방식으로 구현
+                box_checked = widget.findChild(QCheckBox, 'checkbox').isChecked()
                 box_checked = 1 if box_checked else 0
-                resetmethod = widget.layout().itemAt(0).widget().text()
-                resettime = widget.layout().itemAt(1).widget().text()
-                resetparam0 = widget.layout().itemAt(2).widget().text()
-                resetparam1 = widget.layout().itemAt(3).widget().text()
+                resetmethod = widget.findChild(QLabel, 'methodlabel').text()
+                resettime = widget.findChild(QLabel, 'timelabel').text()
+                resetparam0 = widget.findChild(QLabel, 'param0label').text()
+                resetparam1 = widget.findChild(QLabel, 'param1label').text()
 
                 resetmethod, resettime, resetparam0, resetparam1 = formatting_data(resetmethod, resettime, resetparam0, resetparam1)
 
@@ -169,7 +171,7 @@ def save_data(app):
 
 
 # reset_time_input : 분 단위(0-1439), lastchecktime : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21
-def daily_reset(reset_time_input, lastchecktime): 
+def daily_reset(reset_time_input, lastchecktime, output = 0): 
     now = datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
 
@@ -178,6 +180,10 @@ def daily_reset(reset_time_input, lastchecktime):
         pre_reset_time = datetime.combine(now.date() - timedelta(days = 1), reset_time)
     else:
         pre_reset_time = datetime.combine(now.date(), reset_time)
+
+    # 요청시 체크유무대신 다음번 초기화 시간 리턴
+    if output == 1:
+        return pre_reset_time + timedelta(days = 1)
 
     # 마지막 체크 시간이 지난번 초기화 시간 이전인지 확인
     # 지난번 초기화 시간 이후후면 체크 해제(0), 지난번 초기화 시간 이전이면 체크 유지(1)
@@ -189,7 +195,7 @@ def daily_reset(reset_time_input, lastchecktime):
 
 
 # reset_time_input : 분 단위(0-1439), lastchecktime : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, resetparam0 : 요일(0-6)
-def weekly_reset(reset_time_input, lastchecktime, resetparam0):
+def weekly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
     now = datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
     weekday = int(resetparam0)
@@ -209,6 +215,10 @@ def weekly_reset(reset_time_input, lastchecktime, resetparam0):
         else:
             pre_reset_time = datetime.combine(now.date(), reset_time)
 
+    # 요청시 체크유무대신 다음번 초기화 시간 리턴
+    if output == 1:
+        return pre_reset_time + timedelta(days = 7)
+
     lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
     if lastcheck < pre_reset_time: 
         return 0
@@ -217,13 +227,13 @@ def weekly_reset(reset_time_input, lastchecktime, resetparam0):
 
 
 # reset_time_input : 분 단위(0-1439), lastchecktime : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, resetparam0 : 일자(1-31)
-def monthly_reset(reset_time_input, lastchecktime, resetparam0):
+def monthly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
     now = datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
     reset_day= int(resetparam0)
 
     if now.day < reset_day: # 이번달 초기화 일자를 지나지 않은 경우
-        pre_reset_time = datetime.combine((now.date() - relativedelta(months = 1)).replace(day = reset_day), reset_time)
+        pre_reset_time = datetime.combine((now.date() - timedelta(days = 7)).replace(day = reset_day), reset_time)
     elif now.day == reset_day: # 초기화 당일
         if now.time() < reset_time: 
             pre_reset_time = datetime.combine(now.date() - relativedelta(months = 1), reset_time)
@@ -231,6 +241,10 @@ def monthly_reset(reset_time_input, lastchecktime, resetparam0):
             pre_reset_time = datetime.combine(now.date(), reset_time)
     else: # 이번달 초기화 일자를 지난 경우
         pre_reset_time = datetime.combine(now.date().replace(day = reset_day), reset_time)
+
+    # 요청시 체크유무대신 다음번 초기화 시간 리턴
+    if output == 1:
+        return pre_reset_time + relativedelta(months = 1)
 
     lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
     if lastcheck < pre_reset_time: 
