@@ -45,21 +45,15 @@ class DragList(QListWidget):
             # 드롭된 위치에 아이템이 없다면, 마지막 아이템의 다음 위치
             row = self.count()
 
-        if source_list is self: # 같은 블록내에서 드롭시
-            new_item = QListWidgetItem(item.text())
-            self.insertItem(row, new_item)
-            self.setItemWidget(new_item, widget)
+        todo_title = item.data(0)
+        checked = widget.findChild(QCheckBox, 'checkbox').isChecked()
+        todo_reset_method = widget.findChild(QLabel, 'methodlabel').text()
+        todo_reset_time = widget.findChild(QLabel, 'timelabel').text()
+        resetparam0 = widget.findChild(QLabel, 'param0label').text()
+        resetparam1 = widget.findChild(QLabel, 'param1label').text()
 
-        else: # 다른 블록으로 드롭시
-            todo_title = item.data(0)
-            checked = widget.layout().itemAt(widget.layout().count() - 2).widget().isChecked()
-            todo_reset_method = widget.layout().itemAt(0).widget().text()
-            todo_reset_time = widget.layout().itemAt(1).widget().text()
-            resetparam0 = widget.layout().itemAt(2).widget().text()
-            resetparam1 = widget.layout().itemAt(3).widget().text()
-
-            todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
-            self.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked, row)
+        todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
+        self.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked, row)
 
         row = source_list.row(item)
         source_list.takeItem(row)
@@ -179,7 +173,6 @@ class DragList(QListWidget):
         textlabel.setObjectName('textlabel')
         item_layout.addWidget(textlabel)
 
-        item.setData(Qt.UserRole, next_reset_datetime)
         next_reset_time_label = QLabel() # 남은 시간 표시용 임시 QLabel
         next_reset_time_label.setObjectName('next_reset_time_label')
         item_layout.addWidget(next_reset_time_label) 
@@ -194,13 +187,8 @@ class DragList(QListWidget):
 
         self.setItemWidget(item, widget)
 
-        if self.parent.show_remaining_time == 1:
-            self.update_time()
-            textlabel.setVisible(False)
-            next_reset_time_label.setVisible(True)
-        else:
-            textlabel.setVisible(True)
-            next_reset_time_label.setVisible(False)
+        item.setData(Qt.UserRole, next_reset_datetime)
+        self.update_time()
 
 
     def add_todo(self, todo_title, reset_method, reset_time, param0, param1, checked = 0, row = -1):

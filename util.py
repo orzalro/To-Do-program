@@ -101,7 +101,7 @@ def load_data(app):
     # json에서 유저 일정 데이터 읽기
     file_path = 'data/userdata.json'
     if os.path.exists(file_path):
-        df = pd.read_json(file_path, orient='records', lines=True)
+        df = pd.read_json(file_path, encoding="utf-8", orient='records', lines=True)
 
         # 일정 갯수에 따라 반복문 실행
         for i in range(len(df)):
@@ -148,7 +148,7 @@ def save_data(app):
                 data.append([row, col, todoname, checked, resetmethod, resettime, resetparam0, resetparam1])
 
     df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1'])
-    df.to_json(file_path, orient='records', lines=True)
+    df.to_json(file_path, force_ascii=False, orient='records', lines=True)
 
     # 마지막체크시간 config에 저장
     app.config['Variables']['lastchecktime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
