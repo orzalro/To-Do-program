@@ -233,7 +233,7 @@ def monthly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
     reset_day= int(resetparam0)
 
     if now.day < reset_day: # 이번달 초기화 일자를 지나지 않은 경우
-        pre_reset_time = datetime.combine((now.date() - timedelta(days = 7)).replace(day = reset_day), reset_time)
+        pre_reset_time = datetime.combine((now.date() - relativedelta(months = 1)).replace(day = reset_day), reset_time)
     elif now.day == reset_day: # 초기화 당일
         if now.time() < reset_time: 
             pre_reset_time = datetime.combine(now.date() - relativedelta(months = 1), reset_time)
