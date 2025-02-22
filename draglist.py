@@ -61,7 +61,9 @@ class DragList(QListWidget):
             todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
             self.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked, row)
 
-        source_list.remove_todo(item)
+        row = source_list.row(item)
+        source_list.takeItem(row)
+        util.save_data(self.parent)
 
 
     def update_time(self):
