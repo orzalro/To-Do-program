@@ -1,6 +1,7 @@
 import util
 from PyQt5.QtWidgets import QWidget, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QLabel, QAbstractItemView, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QBrush, QColor
 from datetime import datetime, timedelta
 
 class DragList(QListWidget):
@@ -61,29 +62,33 @@ class DragList(QListWidget):
 
 
     def update_time(self):
-        if self.parent.show_remaining_time == 0:
-            for i in range(self.count()):
-                item = self.item(i)
-                widget = self.itemWidget(item)
+        for i in range(self.count()):
+            item = self.item(i)
+            widget = self.itemWidget(item)
+            next_reset_datetime = item.data(Qt.UserRole)
+            difference = next_reset_datetime - datetime.now()
+            seconds_left = round(difference.total_seconds())
+            days = seconds_left // 86400
+            seconds_left %= 86400
+            hours = seconds_left // 3600
+            seconds_left %= 3600
+            minutes = seconds_left // 60
+            seconds = seconds_left % 60
+            widget.findChild(QLabel, 'next_reset_time_label').setText(f'{days:>2} 일, {hours}:{minutes}:{seconds} 남음')
+
+            # 남은 기한 표시
+            if self.parent.show_remaining_time == 0:
                 widget.findChild(QLabel, 'textlabel').setVisible(True)
                 widget.findChild(QLabel, 'next_reset_time_label').setVisible(False)
-
-        else:   
-            for i in range(self.count()):
-                item = self.item(i)
-                widget = self.itemWidget(item)
+            else:
                 widget.findChild(QLabel, 'textlabel').setVisible(False)
                 widget.findChild(QLabel, 'next_reset_time_label').setVisible(True)
-                next_reset_datetime = item.data(Qt.UserRole)
-                difference = next_reset_datetime - datetime.now()
-                seconds_left = round(difference.total_seconds())
-                days = seconds_left // 86400
-                seconds_left %= 86400
-                hours = seconds_left // 3600
-                seconds_left %= 3600
-                minutes = seconds_left // 60
-                seconds = seconds_left % 60
-                widget.findChild(QLabel, 'next_reset_time_label').setText(f'{days:>2} 일, {hours}:{minutes}:{seconds} 남음')
+
+            # 시간초과 경고 (임시로 3일)
+            if self.parent.timeout_warn == 1 and round(difference.total_seconds()) <= 259200 and widget.findChild(QCheckBox, 'checkbox').isChecked() == 0:
+                item.setBackground(QColor(255, 0, 0, 64))
+            else:
+                item.setBackground(QBrush())
 
         
     def update_param(self, item, reset_method, reset_time, param0, param1, checked):

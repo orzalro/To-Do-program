@@ -47,6 +47,15 @@ class MyApp(QMainWindow):
         action.setDefaultWidget(show_remaining_time_checkbox)
         configmenu.addAction(action)
 
+        # 시간초과 경고 옵션 체크박스 생성
+        timeout_warn_checkbox = QCheckBox('시간초과 경고', self)
+        timeout_warn_checkbox.setChecked(self.timeout_warn)
+        timeout_warn_checkbox.setLayoutDirection(Qt.RightToLeft)
+        timeout_warn_checkbox.clicked.connect(lambda: util.update_config(self, 'Settings', 'timeout_warn', 1 if timeout_warn_checkbox.isChecked() else 0))
+        action = QWidgetAction(self)
+        action.setDefaultWidget(timeout_warn_checkbox)
+        configmenu.addAction(action)
+
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
         self.setGeometry(490, 190, self.window_width, self.window_height) #(x, y, width, height)

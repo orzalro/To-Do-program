@@ -25,6 +25,7 @@ def write_config(app):
     app.config.set('Settings', 'grid_row', str(app.config.getint('Settings', 'grid_row', fallback = 2)))
     app.config.set('Settings', 'remove_todo_alert', str(app.config.getint('Settings', 'remove_todo_alert', fallback = 0)))
     app.config.set('Settings', 'show_remaining_time', str(app.config.getint('Settings', 'show_remaining_time', fallback = 0)))
+    app.config.set('Settings', 'timeout_warn', str(app.config.getint('Settings', 'timeout_warn', fallback = 0)))
     app.config.set('Variables', 'lastchecktime', str(app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))))
     with open(file_path, 'w') as configfile:
         app.config.write(configfile)
@@ -46,6 +47,7 @@ def read_config(app):
     app.grid_row = app.config.getint('Settings', 'grid_row', fallback = 2)
     app.remove_todo_alert = app.config.getint('Settings', 'remove_todo_alert', fallback = 0)
     app.show_remaining_time = app.config.getint('Settings', 'show_remaining_time', fallback = 0)
+    app.timeout_warn = app.config.getint('Settings', 'timeout_warn', fallback = 0)
     app.lastchecktime = app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 
