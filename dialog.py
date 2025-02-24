@@ -69,20 +69,20 @@ class AddTodoDialog(QDialog):
 
     def update_button_styles(self, active_index):
         # 모든 버튼 초기화 (기본 스타일)
-        self.daily_btn.setStyleSheet("background-color: none;")
-        self.weekly_btn.setStyleSheet("background-color: none;")
-        self.monthly_btn.setStyleSheet("background-color: none;")
-        self.cycle_btn.setStyleSheet("background-color: none;")
+        self.daily_btn.setStyleSheet('background-color: none;')
+        self.weekly_btn.setStyleSheet('background-color: none;')
+        self.monthly_btn.setStyleSheet('background-color: none;')
+        self.cycle_btn.setStyleSheet('background-color: none;')
         
         # 현재 활성화된 버튼 강조 (배경색 변경 및 스타일 설정)
         if active_index == 0:
-            self.daily_btn.setStyleSheet("border-radius: 10px; padding: 5px; background-color: lightblue;")
+            self.daily_btn.setStyleSheet('border-radius: 10px; padding: 5px; background-color: lightblue;')
         elif active_index == 1:
-            self.weekly_btn.setStyleSheet("border-radius: 10px; padding: 5px; background-color: lightblue;")
+            self.weekly_btn.setStyleSheet('border-radius: 10px; padding: 5px; background-color: lightblue;')
         elif active_index == 2:
-            self.monthly_btn.setStyleSheet("border-radius: 10px; padding: 5px; background-color: lightblue;")
+            self.monthly_btn.setStyleSheet('border-radius: 10px; padding: 5px; background-color: lightblue;')
         elif active_index == 3:
-            self.cycle_btn.setStyleSheet("border-radius: 10px; padding: 5px; background-color: lightblue;")
+            self.cycle_btn.setStyleSheet('border-radius: 10px; padding: 5px; background-color: lightblue;')
 
 
     # 선택된 알고리즘에 따라 입력필드 변경
@@ -124,7 +124,7 @@ class AddTodoDialog(QDialog):
         self.cycle_reset_time = QLineEdit(self)
         self.cycle_reset_time.setPlaceholderText('0-1439(분)')
         layout.addRow('기준 시간:', self.cycle_reset_time)
-        self.cycle_resetparam1 = QLabel("기준 날짜를 선택하세요", self)
+        self.cycle_resetparam1 = QLabel('기준 날짜를 선택하세요', self)
         self.cycle_calendar = QCalendarWidget(self)
         self.show_calender_date(QDate.currentDate())
         self.cycle_calendar.clicked.connect(self.show_calender_date)
@@ -133,7 +133,7 @@ class AddTodoDialog(QDialog):
         self.cycle_layout.setLayout(layout)
     
     def show_calender_date(self, date):
-        self.cycle_resetparam1.setText(f"기준 날짜: {date.toString('yyyy-MM-dd')}")
+        self.cycle_resetparam1.setText(f'기준 날짜: {date.toString('yyyy-MM-dd')}')
 
     # 다이얼로그 데이터 리턴
     def get_data(self):
@@ -148,4 +148,4 @@ class AddTodoDialog(QDialog):
             reset_time = time(int(self.cycle_reset_time.text()) // 60, int(self.cycle_reset_time.text()) % 60, 0)
             base_datetime = datetime.combine(datetime.strptime(self.cycle_resetparam1.text()[7:], '%Y-%m-%d'), reset_time)
             return current_index, -1, int(self.cycle_resetparam0.text()), base_datetime.strftime('%Y-%m-%d %H:%M:%S')
-        return ""
+        return ''

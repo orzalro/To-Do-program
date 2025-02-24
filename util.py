@@ -95,7 +95,7 @@ def reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, res
 def load_data(app):
     # json에서 유저 일정 데이터 읽기
     if os.path.exists(DATA_FILE_PATH):
-        df = pd.read_json(DATA_FILE_PATH, encoding="utf-8", orient='records', lines=True)
+        df = pd.read_json(DATA_FILE_PATH, encoding='utf-8', orient='records', lines=True)
 
         # 일정 갯수에 따라 반복문 실행
         for i in range(len(df)):
@@ -198,7 +198,7 @@ def weekly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
     if days_since_weekday > 0: 
         pre_reset_time = datetime.combine(now.date() - timedelta(days = days_since_weekday), reset_time)
     elif days_since_weekday < 0: 
-        pre_reset_time = datetime.combine(now.date() - timedelta(days = 7 - days_since_weekday), reset_time)
+        pre_reset_time = datetime.combine(now.date() - timedelta(days = 7 + days_since_weekday), reset_time)
     # 같은 요일
     else:
         if now.time() < reset_time: 
