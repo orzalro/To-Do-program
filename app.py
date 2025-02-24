@@ -58,7 +58,14 @@ class MyApp(QMainWindow):
 
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
-        self.setGeometry(490, 190, self.window_width, self.window_height) #(x, y, width, height)
+        self.resize(self.window_width, self.window_height) #(x, y, width, height)
+
+        # 화면 중앙 정렬
+        self.show()
+        app_frame = self.frameGeometry()
+        center_pos = QApplication.screenAt(self.pos()).availableGeometry().center()
+        app_frame.moveCenter(center_pos)
+        self.move(app_frame.topLeft())
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -142,5 +149,4 @@ class MyApp(QMainWindow):
 
 app = QApplication(sys.argv)
 window = MyApp()
-window.show()
 sys.exit(app.exec_())

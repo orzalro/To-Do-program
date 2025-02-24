@@ -5,38 +5,31 @@ import os
 import configparser
 from PyQt5.QtWidgets import QCheckBox, QLabel
 
+CONFIG_FILE_PATH = 'data/config.ini'
+DATA_FILE_PATH = 'data/userdata.json'
+
 def update_config(app, section, key, value):
     #config 값을 업데이트하고 즉시 저장하는 함수
     app.config.set(section, key, str(value))  # 문자열로 변환하여 저장
     setattr(app, f'{key}', value)
 
     # 변경된 설정을 config.ini 파일에 저장
-    with open('data/config.ini', 'w') as configfile:
+    with open(CONFIG_FILE_PATH, 'w') as configfile:
         app.config.write(configfile)
 
     print(f'설정 변경됨: [{section}] {key} = {value}')  # 디버깅용
 
 
 def write_config(app):
-    file_path = 'data/config.ini'
-    app.config.set('Settings', 'window_width', str(app.config.getint('Settings', 'window_width', fallback = 1000)))
-    app.config.set('Settings', 'window_height', str(app.config.getint('Settings', 'window_height', fallback = 600)))
-    app.config.set('Settings', 'grid_col', str(app.config.getint('Settings', 'grid_col', fallback = 3)))
-    app.config.set('Settings', 'grid_row', str(app.config.getint('Settings', 'grid_row', fallback = 2)))
-    app.config.set('Settings', 'remove_todo_alert', str(app.config.getint('Settings', 'remove_todo_alert', fallback = 0)))
-    app.config.set('Settings', 'show_remaining_time', str(app.config.getint('Settings', 'show_remaining_time', fallback = 0)))
-    app.config.set('Settings', 'timeout_warn', str(app.config.getint('Settings', 'timeout_warn', fallback = 0)))
-    app.config.set('Variables', 'lastchecktime', str(app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))))
-    with open(file_path, 'w') as configfile:
+    with open(CONFIG_FILE_PATH, 'w') as configfile:
         app.config.write(configfile)
 
 
 def read_config(app):
-    file_path = 'data/config.ini'
     app.config = configparser.ConfigParser()
-    if os.path.exists(file_path):
-        app.config.read(file_path)
-    else:
+    if os.path.exists(CONFIG_FILE_PATH):
+        app.config.read(CONFIG_FILE_PATH)
+    else: # 경로에 config파일이 없을 시 생성 후 read_config 재호출
         app.config['Settings'] = {}
         app.config['Variables'] = {}
         write_config(app)
@@ -101,9 +94,8 @@ def reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, res
 # ['row', 'col', 'name', 'checked', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1']
 def load_data(app):
     # json에서 유저 일정 데이터 읽기
-    file_path = 'data/userdata.json'
-    if os.path.exists(file_path):
-        df = pd.read_json(file_path, encoding="utf-8", orient='records', lines=True)
+    if os.path.exists(DATA_FILE_PATH):
+        df = pd.read_json(DATA_FILE_PATH, encoding="utf-8", orient='records', lines=True)
 
         # 일정 갯수에 따라 반복문 실행
         for i in range(len(df)):
@@ -124,9 +116,7 @@ def load_data(app):
 def save_data(app):
     start_time = datetime.now()
 
-    file_path = 'data/userdata.json'
     data = []
-
     for row in range(app.grid_row):
         for col in range(app.grid_col):
             todo_list = app.todo_list[f'list{row * 3 + col}']
@@ -150,11 +140,10 @@ def save_data(app):
                 data.append([row, col, todoname, checked, resetmethod, resettime, resetparam0, resetparam1])
 
     df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1'])
-    df.to_json(file_path, force_ascii=False, orient='records', lines=True)
+    df.to_json(DATA_FILE_PATH, force_ascii=False, orient='records', lines=True)
 
     # 마지막체크시간 config에 저장
-    app.config['Variables']['lastchecktime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    write_config(app)
+    update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     app.lastchecktime = app.config.get('Variables', 'lastchecktime')
 
     # save_data() 소요 시간 체크
