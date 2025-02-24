@@ -134,10 +134,14 @@ def save_data(app):
 
                 resetmethod, resettime, resetparam0, resetparam1 = formatting_data(resetmethod, resettime, resetparam0, resetparam1)
 
-                checked, resetparam1 = reset_check(box_checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
-                if checked != box_checked or resetmethod == 3: todo_list.update_param(item, resetmethod, resettime, resetparam0, resetparam1, checked)
-
-                data.append([row, col, todoname, checked, resetmethod, resettime, resetparam0, resetparam1])
+                checked, new_resetparam1 = reset_check(box_checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
+                if checked != box_checked: 
+                    todo_list.update_param(item, resetmethod, resettime, resetparam0, new_resetparam1, checked)
+                elif resetmethod == 3:
+                    next_reset_datetime = datetime.strptime(resetparam1, '%Y-%m-%d %H:%M:%S') + timedelta(minutes = int(resetparam0))
+                    if next_reset_datetime < datetime.now():
+                        todo_list.update_param(item, resetmethod, resettime, resetparam0, new_resetparam1, checked)
+                data.append([row, col, todoname, checked, resetmethod, resettime, resetparam0, new_resetparam1])
 
     df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1'])
     df.to_json(DATA_FILE_PATH, force_ascii=False, orient='records', lines=True)

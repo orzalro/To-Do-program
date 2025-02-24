@@ -141,17 +141,12 @@ class DragList(QListWidget):
         elif reset_method == 3:
             methodlabel = QLabel('주기')
             next_reset_datetime = datetime.strptime(param1, '%Y-%m-%d %H:%M:%S') + timedelta(minutes = int(param0))
-
-            difference = next_reset_datetime - datetime.now() # 다음 초기화까지의 차이
-            if difference.days != 0:
-                cycle_label = f'{next_reset_datetime.strftime('%H:%M')}  {difference.days}일 남음'
-            else:
-                cycle_label = f'{next_reset_datetime.strftime('%H:%M')}'
+            cycle_label = f'{next_reset_datetime.strftime('%H:%M  %#m월 %#d일')}'
 
             param0label = QLabel(f'{param0}') # 초기화 주기 int
             param1label = QLabel(f'{param1}') # 기준 날짜 str
 
-            timelabel = QLabel(cycle_label)
+            timelabel = QLabel()
             textlabel = QLabel(f'주기 {cycle_label}')
 
         methodlabel.setObjectName('methodlabel')
