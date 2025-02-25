@@ -2,46 +2,11 @@ from datetime import datetime, time, timedelta
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import os
-import configparser
 from PyQt5.QtWidgets import QCheckBox, QLabel
+import config
 
-CONFIG_FILE_PATH = 'data/config.ini'
+
 DATA_FILE_PATH = 'data/userdata.json'
-
-def update_config(app, section, key, value):
-    #config 값을 업데이트하고 즉시 저장하는 함수
-    app.config.set(section, key, str(value))  # 문자열로 변환하여 저장
-    setattr(app, f'{key}', value)
-
-    # 변경된 설정을 config.ini 파일에 저장
-    with open(CONFIG_FILE_PATH, 'w') as configfile:
-        app.config.write(configfile)
-
-    print(f'설정 변경됨: [{section}] {key} = {value}')  # 디버깅용
-
-
-def write_config(app):
-    with open(CONFIG_FILE_PATH, 'w') as configfile:
-        app.config.write(configfile)
-
-
-def read_config(app):
-    app.config = configparser.ConfigParser()
-    if os.path.exists(CONFIG_FILE_PATH):
-        app.config.read(CONFIG_FILE_PATH)
-    else: # 경로에 config파일이 없을 시 생성 후 read_config 재호출
-        app.config['Settings'] = {}
-        app.config['Variables'] = {}
-        write_config(app)
-        read_config(app)
-    app.window_width = app.config.getint('Settings', 'window_width', fallback = 1000)
-    app.window_height = app.config.getint('Settings', 'window_height', fallback = 600)
-    app.grid_col = app.config.getint('Settings', 'grid_col', fallback = 3)
-    app.grid_row = app.config.getint('Settings', 'grid_row', fallback = 2)
-    app.remove_todo_alert = app.config.getint('Settings', 'remove_todo_alert', fallback = 0)
-    app.show_remaining_time = app.config.getint('Settings', 'show_remaining_time', fallback = 0)
-    app.timeout_warn = app.config.getint('Settings', 'timeout_warn', fallback = 0)
-    app.lastchecktime = app.config.get('Variables', 'lastchecktime', fallback = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 
 def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
@@ -147,7 +112,7 @@ def save_data(app):
     df.to_json(DATA_FILE_PATH, force_ascii=False, orient='records', lines=True)
 
     # 마지막체크시간 config에 저장
-    update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    config.update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     app.lastchecktime = app.config.get('Variables', 'lastchecktime')
 
     # save_data() 소요 시간 체크

@@ -1,15 +1,16 @@
 import sys
 import util
+import config
 import dialog as dia
 import draglist
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow, QCheckBox, QWidgetAction, QMessageBox
-from PyQt5.QtCore import Qt, QTimer, QTime
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow
+from PyQt5.QtCore import QTimer, QTime
 
 
 class MyApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        util.read_config(self)
+        config.read_config(self)
         self.init_ui()
         self.auto_save()
 
@@ -21,40 +22,16 @@ class MyApp(QMainWindow):
         filemenu = menubar.addMenu('&File')
 
         # Exit 액션 생성
-        exitAction = QAction('Exit', self)
+        exitAction = QAction('종료', self)
         exitAction.setShortcut('Ctrl+W')
         exitAction.triggered.connect(self.close)
         filemenu.addAction(exitAction)
 
-        # Config 메뉴 생성
+        # Config 메뉴 생성 및 환경설정 액션 생성
         configmenu = menubar.addMenu('&Config')
-
-        # 삭제시 확인 옵션 체크박스 생성
-        remove_todo_alert_checkbox = QCheckBox('일정 삭제시 한번 더 확인', self)
-        remove_todo_alert_checkbox.setChecked(self.remove_todo_alert)
-        remove_todo_alert_checkbox.setLayoutDirection(Qt.RightToLeft)
-        remove_todo_alert_checkbox.clicked.connect(lambda: util.update_config(self, 'Settings', 'remove_todo_alert', 1 if remove_todo_alert_checkbox.isChecked() else 0))
-        action = QWidgetAction(self)
-        action.setDefaultWidget(remove_todo_alert_checkbox)
-        configmenu.addAction(action)
-
-        # 일정 남은 기한 표시 옵션 체크박스 생성
-        show_remaining_time_checkbox = QCheckBox('일정 남은 기한 표시', self)
-        show_remaining_time_checkbox.setChecked(self.show_remaining_time)
-        show_remaining_time_checkbox.setLayoutDirection(Qt.RightToLeft)
-        show_remaining_time_checkbox.clicked.connect(lambda: util.update_config(self, 'Settings', 'show_remaining_time', 1 if show_remaining_time_checkbox.isChecked() else 0))
-        action = QWidgetAction(self)
-        action.setDefaultWidget(show_remaining_time_checkbox)
-        configmenu.addAction(action)
-
-        # 시간초과 경고 옵션 체크박스 생성
-        timeout_warn_checkbox = QCheckBox('시간초과 경고', self)
-        timeout_warn_checkbox.setChecked(self.timeout_warn)
-        timeout_warn_checkbox.setLayoutDirection(Qt.RightToLeft)
-        timeout_warn_checkbox.clicked.connect(lambda: util.update_config(self, 'Settings', 'timeout_warn', 1 if timeout_warn_checkbox.isChecked() else 0))
-        action = QWidgetAction(self)
-        action.setDefaultWidget(timeout_warn_checkbox)
-        configmenu.addAction(action)
+        configAction = QAction('환경 설정', self)
+        configAction.triggered.connect(lambda: self.open_config_dialog())
+        configmenu.addAction(configAction)
 
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
@@ -77,6 +54,12 @@ class MyApp(QMainWindow):
           # 레이아웃을 창에 설정
         self.central_widget.setLayout(self.central_widget.main_layout)
         util.load_data(self)
+
+
+    def open_config_dialog(self):
+        dialog = config.ConfigDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            print()
 
 
     def open_add_todo_dialog(self, row, col):

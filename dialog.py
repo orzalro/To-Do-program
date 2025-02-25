@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QHBoxLayout, QDialog, QFormLayout, QDialogButtonBox, QStackedWidget, QLabel, QCalendarWidget, QTimeEdit
+from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QHBoxLayout, QDialog, QFormLayout, QDialogButtonBox, QStackedWidget, QLabel, QCalendarWidget
 from PyQt5.QtCore import QDate
 from datetime import datetime, time
+
 
 class AddTodoDialog(QDialog):
     def __init__(self):
@@ -132,8 +133,10 @@ class AddTodoDialog(QDialog):
         layout.addWidget(self.cycle_resetparam1)
         self.cycle_layout.setLayout(layout)
     
+
     def show_calender_date(self, date):
         self.cycle_resetparam1.setText(f'기준 날짜: {date.toString('yyyy-MM-dd')}')
+
 
     # 다이얼로그 데이터 리턴
     def get_data(self):
