@@ -84,8 +84,9 @@ class DragList(QListWidget):
                 widget.findChild(QLabel, 'textlabel').setVisible(False)
                 widget.findChild(QLabel, 'next_reset_time_label').setVisible(True)
 
-            # 시간초과 경고 (임시로 3일)
-            if self.parent.timeout_warn == 1 and round(difference.total_seconds()) <= 259200 and widget.findChild(QCheckBox, 'checkbox').isChecked() == 0:
+            # 시간초과 경고
+            warn_time = int(self.parent.timeout_warn) if int(self.parent.timeout_warn) != -1 else 0
+            if warn_time * 86400 > round(difference.total_seconds()) and widget.findChild(QCheckBox, 'checkbox').isChecked() == 0:
                 item.setBackground(QColor(255, 0, 0, 64))
             else:
                 item.setBackground(QBrush())
