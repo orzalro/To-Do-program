@@ -171,10 +171,10 @@ class DragList(QListWidget):
         param1label.setVisible(False)
         item_layout.addWidget(param1label)
 
-        textlabel.setObjectName('textlabel')
+        textlabel.setObjectName('textlabel') # 설정된 내용 표시용 QLabel
         item_layout.addWidget(textlabel)
 
-        next_reset_time_label = QLabel() # 남은 시간 표시용 임시 QLabel
+        next_reset_time_label = QLabel() # 남은 시간 표시용 QLabel
         next_reset_time_label.setObjectName('next_reset_time_label')
         item_layout.addWidget(next_reset_time_label) 
 

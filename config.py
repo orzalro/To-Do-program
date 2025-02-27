@@ -51,8 +51,7 @@ class ConfigDialog(QDialog):
         timeout_warn_layout.setAlignment(Qt.AlignCenter)
         self.timeout_warn_text = QLabel(f'일정 남은 기한이 {self.parent.timeout_warn}일 이하이면 경고', self)
         timeout_warn_layout.addWidget(self.timeout_warn_text)
-
-        timeout_warn_text_input = QPushButton('수정', self)
+        timeout_warn_text_input = QPushButton('수정', self) # 옵션 수정용 버튼
         timeout_warn_text_input.setFixedSize(40, 20)
         timeout_warn_text_input.clicked.connect(lambda: self.get_text_update(self.parent, 'Settings', 'timeout_warn'))
         timeout_warn_layout.addWidget(timeout_warn_text_input)
@@ -65,8 +64,9 @@ class ConfigDialog(QDialog):
         self.setLayout(layout)
 
 
+    # 옵션 수정용 텍스트 입력 받기
     def get_text_update(self, app, section, key):
-        text, ok = QInputDialog.getText(self, '입력', '경고 기한 설정 ( -1 : 사용 안함 )')
+        text, ok = QInputDialog.getText(self, '입력', '경고 기한 설정(일) ( -1 : 사용 안함 )')
         if ok and text:  # 사용자가 '확인'을 누르고, 입력값이 있을 때만 처리
             update_config(app, section, key, text)
             self.timeout_warn_text.setText(f'일정 남은 기한이 {self.parent.timeout_warn}일 이하이면 경고')
