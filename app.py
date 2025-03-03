@@ -51,8 +51,9 @@ class MyApp(QMainWindow):
         self.central_widget.main_layout = QGridLayout()
         self.show_grid()
         
-          # 레이아웃을 창에 설정
+        # 레이아웃을 창에 설정
         self.central_widget.setLayout(self.central_widget.main_layout)
+        
         util.load_data(self)
 
 
