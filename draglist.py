@@ -1,5 +1,7 @@
 import util
-from PyQt5.QtWidgets import QWidget, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout, QLabel, QAbstractItemView, QMessageBox
+import dialog as dia
+from PyQt5.QtWidgets import QWidget, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout
+from PyQt5.QtWidgets import QLabel, QAbstractItemView, QMessageBox, QDialog
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor
 from datetime import datetime, timedelta
@@ -11,6 +13,26 @@ class DragList(QListWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_time)  # 1초마다 update_time 실행
         self.timer.start(1000)
+
+        self.itemDoubleClicked.connect(lambda: self.open_add_todo_dialog(self.currentItem()))
+    
+
+    def open_add_todo_dialog(self, item):
+        widget = self.itemWidget(item)
+        todo_reset_method = widget.findChild(QLabel, 'methodlabel').text()
+        todo_reset_time = widget.findChild(QLabel, 'timelabel').text()
+        resetparam0 = widget.findChild(QLabel, 'param0label').text()
+        resetparam1 = widget.findChild(QLabel, 'param1label').text()
+        todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
+        dialog = dia.AddTodoDialog(item.text(), todo_reset_method, todo_reset_time, resetparam0, resetparam1)
+        if dialog.exec_() == QDialog.Accepted:
+            # 다이얼로그에서 받은 데이터
+            item.setData(0, dialog.title_input.text())
+            todo_reset_method, todo_reset_time, resetparam0, resetparam1 = dialog.get_data()
+            self.update_param(item, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked = 0)
+
+            util.save_data(self.parent)
+
 
     # 드래그 위치에 따라 드래그드롭모드 변경
     def dragEnterEvent(self, event):

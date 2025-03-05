@@ -1,16 +1,20 @@
-from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QHBoxLayout, QDialog, QFormLayout, QDialogButtonBox, QStackedWidget, QLabel, QCalendarWidget, QTimeEdit, QAbstractSpinBox
-from PyQt5.QtCore import QDate
+from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QHBoxLayout, QDialog, QFormLayout, QDialogButtonBox, QStackedWidget, QLabel, QCalendarWidget
+from PyQt5.QtWidgets import QTimeEdit, QAbstractSpinBox
+from PyQt5.QtCore import QDate, QTime
 from PyQt5.QtGui import QFont
 from datetime import datetime
 
 
 class AddTodoDialog(QDialog):
-    def __init__(self):
+    def __init__(self, todo_title='',todo_reset_method=0, todo_reset_time=0, resetparam0=-1, resetparam1=-1):
         super().__init__()
-        self.init_ui()
+        self.todo_reset_time = int(todo_reset_time)
+        self.resetparam0 = resetparam0
+        self.resetparam1 = resetparam1
+        self.init_ui(todo_title, todo_reset_method)
 
 
-    def init_ui(self):
+    def init_ui(self, todo_title, todo_reset_method):
         # 창 설정
         self.setWindowTitle('할 일 추가')
         self.setGeometry(810, 340, 300, 400)
@@ -20,6 +24,7 @@ class AddTodoDialog(QDialog):
         button_layout = QHBoxLayout()
 
         self.title_input = QLineEdit(self)
+        self.title_input.setText(todo_title)
         self.title_input.setMaxLength(10)
         layout.addRow('제목:', self.title_input)
 
@@ -57,7 +62,9 @@ class AddTodoDialog(QDialog):
         self.cycle_btn.clicked.connect(lambda: (self.stacked_widget.setCurrentIndex(3), self.update_button_styles(3), self.update_button_state()))
         button_layout.addWidget(self.cycle_btn)
 
-        self.update_button_styles(0) # 초기 선택된 버튼 표시
+        self.stacked_widget.setCurrentIndex(todo_reset_method)
+        self.update_button_styles(todo_reset_method) # 초기 선택된 버튼 표시
+
         layout.addRow(button_layout)
         layout.addWidget(self.stacked_widget)
 
@@ -68,6 +75,7 @@ class AddTodoDialog(QDialog):
 
         self.ok_button = self.button_box.button(QDialogButtonBox.Ok)
         self.ok_button.setEnabled(False)
+        self.update_button_state()  # 초기 버튼 상태 설정
 
         self.setLayout(layout)
 
@@ -126,6 +134,7 @@ class AddTodoDialog(QDialog):
     
     def init_time_edit(self):
         time_edit = QTimeEdit(self)
+        time_edit.setTime(QTime(self.todo_reset_time // 60, self.todo_reset_time % 60))
         time_edit.setButtonSymbols(QAbstractSpinBox.NoButtons)  # 위/아래 버튼 숨김
         time_edit.setKeyboardTracking(False)  # 키 입력이 완료될 때만 업데이트
 
@@ -151,6 +160,7 @@ class AddTodoDialog(QDialog):
         self.weekly_reset_time = self.init_time_edit()
         layout.addRow('초기화 시간:', self.weekly_reset_time)
         self.weekly_resetparam0 = QLineEdit(self)
+        self.weekly_resetparam0.setText(str(self.resetparam0) if self.resetparam0 != -1 else '')
         self.weekly_resetparam0.setPlaceholderText('0-6(월-일)')
         layout.addRow('초기화 요일:', self.weekly_resetparam0)
         self.weekly_layout.setLayout(layout)
@@ -161,21 +171,29 @@ class AddTodoDialog(QDialog):
         self.monthly_reset_time = self.init_time_edit()
         layout.addRow('초기화 시간:', self.monthly_reset_time)
         self.monthly_resetparam0 = QLineEdit(self)
+        self.monthly_resetparam0.setText(str(self.resetparam0 if self.resetparam0 != -1 else ''))
         self.monthly_resetparam0.setPlaceholderText('1-31(일)')
         layout.addRow('초기화 날짜:', self.monthly_resetparam0)
         self.monthly_layout.setLayout(layout)
 
 
     def init_cycle_layout(self):
+        if self.resetparam1 != -1:
+            self.todo_reset_time = int(self.resetparam1[-8:-6]) * 60 + int(self.resetparam1[-5:-3])
+            default_date = QDate.fromString(self.resetparam1[:10], 'yyyy-MM-dd')
+        else:
+            default_date = QDate.currentDate()
         layout = QFormLayout()
         self.cycle_reset_time = self.init_time_edit()
         layout.addRow('기준 시간:', self.cycle_reset_time)
         self.cycle_resetparam0 = QLineEdit(self)
+        self.cycle_resetparam0.setText(str(self.resetparam0) if self.resetparam0 != -1 else '')
         self.cycle_resetparam0.setPlaceholderText('(분)')
         layout.addRow('초기화 주기:', self.cycle_resetparam0)
         self.cycle_resetparam1 = QLabel('기준 날짜를 선택하세요', self)
         self.cycle_calendar = QCalendarWidget(self)
-        self.show_calender_date(QDate.currentDate())
+        self.cycle_calendar.setSelectedDate(default_date)
+        self.show_calender_date(self.cycle_calendar.selectedDate())
         self.cycle_calendar.clicked.connect(self.show_calender_date)
         layout.addWidget(self.cycle_calendar)
         layout.addWidget(self.cycle_resetparam1)
@@ -202,7 +220,7 @@ class AddTodoDialog(QDialog):
             reset_time = time.hour() * 60 + time.minute()
             return current_index, reset_time, int(self.monthly_resetparam0.text()), -1
         elif current_index == 3:
-            reset_time = self.monthly_reset_time.time().toPyTime()
+            reset_time = self.cycle_reset_time.time().toPyTime()
             base_datetime = datetime.combine(datetime.strptime(self.cycle_resetparam1.text()[7:], '%Y-%m-%d'), reset_time)
             return current_index, -1, int(self.cycle_resetparam0.text()), base_datetime.strftime('%Y-%m-%d %H:%M:%S')
         return ''

@@ -76,7 +76,6 @@ class MyApp(QMainWindow):
 
 
     def show_grid(self):
-        # 일정 리스트 (DragList(QListWidget))
         self.todo_list = {}
         for i in range(self.grid_row):
             for j in range(self.grid_col):
@@ -84,13 +83,15 @@ class MyApp(QMainWindow):
                 list_vbox.setSpacing(0)
                 list_vbox.setContentsMargins(0, 10, 0, 10) # (좌, 상, 우, 하) 여백
 
+                # 일정 리스트 (DragList(QListWidget))
                 self.todo_list[f'list{i * 3 + j}'] = draglist.DragList(self)
                 self.todo_list[f'list{i * 3 + j}'].setDragDropMode(QAbstractItemView.InternalMove)
                 list_vbox.addWidget(self.todo_list[f'list{i * 3 + j}'])
 
                 # 일정 추가 버튼
                 add_button = QPushButton('일정 추가', self) 
-                add_button.clicked.connect(lambda _, row = i, col = j: self.open_add_todo_dialog(row, col)) # 버튼 클릭 시 add_todo 메소드 실행을 위한 정보 입력을 받는 다이얼로그 창을 띄움
+                # 버튼 클릭 시 add_todo 메소드 실행을 위한 정보 입력을 받는 다이얼로그 창을 띄움
+                add_button.clicked.connect(lambda _, row = i, col = j: self.open_add_todo_dialog(row, col)) 
                 list_vbox.addWidget(add_button)
 
                 self.central_widget.main_layout.addLayout(list_vbox, i * 2, j * 2)
