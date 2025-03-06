@@ -44,15 +44,8 @@ class MyApp(QMainWindow):
         app_frame.moveCenter(center_pos)
         self.move(app_frame.topLeft())
 
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
-
-        # 그리드 레이아웃 생성
-        self.central_widget.main_layout = QGridLayout()
+        self.create_todo_list()
         self.show_grid()
-        
-        # 레이아웃을 창에 설정
-        self.central_widget.setLayout(self.central_widget.main_layout)
         
         util.load_data(self)
 
@@ -69,32 +62,43 @@ class MyApp(QMainWindow):
             # 다이얼로그에서 받은 데이터
             todo_title = dialog.title_input.text()
             todo_reset_method, todo_reset_time, resetparam0, resetparam1 = dialog.get_data()
-            todo_list = self.todo_list[f'list{row * 3 + col}']
+            todo_list = self.todo_list[f'list{row * self.grid_col + col}']
             todo_list.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1)
 
             util.save_data(self)
 
 
-    def show_grid(self):
+    def create_todo_list(self):
         self.todo_list = {}
+        for i in range(self.grid_row):
+            for j in range(self.grid_col):
+                # 일정 리스트 (DragList(QListWidget))
+                self.todo_list[f'list{i * self.grid_col + j}'] = draglist.DragList(self)
+                self.todo_list[f'list{i * self.grid_col + j}'].setDragDropMode(QAbstractItemView.InternalMove)
+
+
+    def show_grid(self):
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+
+        # 그리드 레이아웃 생성
+        self.central_widget.main_layout = QGridLayout()
+
         for i in range(self.grid_row):
             for j in range(self.grid_col):
                 list_vbox = QVBoxLayout()
                 list_vbox.setSpacing(0)
                 list_vbox.setContentsMargins(0, 10, 0, 10) # (좌, 상, 우, 하) 여백
-
-                # 일정 리스트 (DragList(QListWidget))
-                self.todo_list[f'list{i * 3 + j}'] = draglist.DragList(self)
-                self.todo_list[f'list{i * 3 + j}'].setDragDropMode(QAbstractItemView.InternalMove)
-                list_vbox.addWidget(self.todo_list[f'list{i * 3 + j}'])
-
+                list_vbox.addWidget(self.todo_list[f'list{i * self.grid_col + j}'])
                 # 일정 추가 버튼
                 add_button = QPushButton('일정 추가', self) 
                 # 버튼 클릭 시 add_todo 메소드 실행을 위한 정보 입력을 받는 다이얼로그 창을 띄움
                 add_button.clicked.connect(lambda _, row = i, col = j: self.open_add_todo_dialog(row, col)) 
                 list_vbox.addWidget(add_button)
-
-                self.central_widget.main_layout.addLayout(list_vbox, i * 2, j * 2)
+                self.central_widget.main_layout.addLayout(list_vbox, i, j)
+        
+        # 레이아웃을 창에 설정
+        self.central_widget.setLayout(self.central_widget.main_layout)
 
 
     def show_todo(self, row, col,  todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked):

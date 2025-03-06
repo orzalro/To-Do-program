@@ -87,7 +87,7 @@ def save_data(app):
     data = []
     for row in range(app.grid_row):
         for col in range(app.grid_col):
-            todo_list = app.todo_list[f'list{row * 3 + col}']
+            todo_list = app.todo_list[f'list{row * app.grid_col + col}']
             for i in range(todo_list.count()):
                 item = todo_list.item(i)
                 widget = todo_list.itemWidget(item)
@@ -224,6 +224,7 @@ def monthly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
 
 #         패러미터 구성     
 #           초기화 주기, 기준 날짜 2개
+
 
 # resetparam0 : 분 단위, resetparam1: %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21
 def cycle_reset(resetparam0, resetparam1):

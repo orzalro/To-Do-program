@@ -147,6 +147,7 @@ class AddTodoDialog(QDialog):
 
         return time_edit
     
+    
     # 선택된 알고리즘에 따라 입력필드 변경
     def init_daily_layout(self):
         layout = QFormLayout()
