@@ -8,13 +8,14 @@ from datetime import datetime
 class AddTodoDialog(QDialog):
     def __init__(self, todo_title='',todo_reset_method=0, todo_reset_time=0, resetparam0=-1, resetparam1=-1):
         super().__init__()
+        self.todo_reset_method = todo_reset_method
         self.todo_reset_time = int(todo_reset_time)
         self.resetparam0 = resetparam0
         self.resetparam1 = resetparam1
-        self.init_ui(todo_title, todo_reset_method)
+        self.init_ui(todo_title)
 
 
-    def init_ui(self, todo_title, todo_reset_method):
+    def init_ui(self, todo_title):
         # 창 설정
         self.setWindowTitle('할 일 추가')
         self.setGeometry(810, 340, 300, 400)
@@ -62,8 +63,8 @@ class AddTodoDialog(QDialog):
         self.cycle_btn.clicked.connect(lambda: (self.stacked_widget.setCurrentIndex(3), self.update_button_styles(3), self.update_button_state()))
         button_layout.addWidget(self.cycle_btn)
 
-        self.stacked_widget.setCurrentIndex(todo_reset_method)
-        self.update_button_styles(todo_reset_method) # 초기 선택된 버튼 표시
+        self.stacked_widget.setCurrentIndex(self.todo_reset_method)
+        self.update_button_styles(self.todo_reset_method) # 초기 선택된 버튼 표시
 
         layout.addRow(button_layout)
         layout.addWidget(self.stacked_widget)
@@ -87,7 +88,12 @@ class AddTodoDialog(QDialog):
         # 입력 필드가 비어 있으면 OK 버튼을 비활성화
         current_index = self.stacked_widget.currentIndex()
         if current_index == 0: state = 1
-        elif current_index == 1: state = bool(self.weekly_resetparam0.text().strip())
+        elif current_index == 1:
+            state = 0
+            for i in range(7):
+                if self.weekday_btns[i].isChecked():
+                    state = 1
+                    break
         elif current_index == 2: state = bool(self.monthly_resetparam0.text().strip())
         elif current_index == 3: state = bool(self.cycle_resetparam0.text().strip())
         state = bool(self.title_input.text().strip() and state)
@@ -160,10 +166,19 @@ class AddTodoDialog(QDialog):
         layout = QFormLayout()
         self.weekly_reset_time = self.init_time_edit()
         layout.addRow('초기화 시간:', self.weekly_reset_time)
-        self.weekly_resetparam0 = QLineEdit(self)
-        self.weekly_resetparam0.setText(str(self.resetparam0) if self.resetparam0 != -1 else '')
-        self.weekly_resetparam0.setPlaceholderText('0-6(월-일)')
-        layout.addRow('초기화 요일:', self.weekly_resetparam0)
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(0)
+        self.weekday_btns = []
+        for i in range(7):
+            weekday_btn = QPushButton(['월', '화', '수', '목', '금', '토', '일'][i], self)
+            weekday_btn.setCheckable(True)
+            if self.todo_reset_method == 1:
+                weekday_btn.setChecked(str(i) in self.resetparam0)
+            weekday_btn.setFixedSize(30, 30)
+            weekday_btn.clicked.connect(self.update_button_state)
+            btn_layout.addWidget(weekday_btn)
+            self.weekday_btns.append(weekday_btn)
+        layout.addRow('초기화 요일:', btn_layout)
         self.weekly_layout.setLayout(layout)
 
 
@@ -215,7 +230,9 @@ class AddTodoDialog(QDialog):
         elif current_index == 1:
             time = self.weekly_reset_time.time()
             reset_time = time.hour() * 60 + time.minute()
-            return current_index, reset_time, int(self.weekly_resetparam0.text()), -1
+            resetparam0 = [i for i in range(7) if self.weekday_btns[i].isChecked()]
+            resetparam0 = ' '.join (map(str, resetparam0))
+            return current_index, reset_time, resetparam0, -1
         elif current_index == 2:
             time = self.monthly_reset_time.time()
             reset_time = time.hour() * 60 + time.minute()

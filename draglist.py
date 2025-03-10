@@ -147,11 +147,12 @@ class DragList(QListWidget):
         elif reset_method == 1:
             methodlabel = QLabel('주간')
             weekday_dict = {0: '월요일', 1: '화요일', 2: '수요일', 3: '목요일', 4: '금요일', 5: '토요일', 6: '일요일'}
-            param0label = QLabel(weekday_dict[param0])
+            param0label = QLabel(str(param0))
             next_reset_datetime = util.weekly_reset(reset_time, self.parent.lastchecktime, param0, 1)
+            next_reset_weekday = next_reset_datetime.weekday()
             reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
             timelabel = QLabel(reset_time)
-            textlabel = QLabel(f'주간 {reset_time}  {weekday_dict[param0]}')
+            textlabel = QLabel(f'주간 {reset_time}  {weekday_dict[next_reset_weekday]}')
         
         elif reset_method == 2:
             methodlabel = QLabel('월간')

@@ -12,7 +12,6 @@ DATA_FILE_PATH = 'data/userdata.json'
 def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
     method_dict = {'일간': 0, '주간': 1, '월간': 2, '주기': 3}
     resetmethod = method_dict[resetmethod]
-    weekday_dict = {'월요일': 0, '화요일': 1, '수요일': 2, '목요일': 3, '금요일': 4, '토요일': 5, '일요일': 6}
 
     if resetmethod == 0:
         split_timestr = resettime.split(':')
@@ -23,7 +22,7 @@ def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
     elif resetmethod == 1:
         split_timestr = resettime.split(':')
         resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])  # ex) 05:00(%H:%M) -> 300(Minute)
-        resetparam0 = weekday_dict[resetparam0] # 요일
+        resetparam0 = resetparam0
         resetparam1 = -1
 
     elif resetmethod == 2:
@@ -162,16 +161,33 @@ def daily_reset(reset_time_input, lastchecktime, output = 0):
 def weekly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
     now = datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
-    weekday = int(resetparam0)
+    weekday = list(map(int, str(resetparam0).split()))
 
-    # 선택한 요일에서 현재 요일까지의 차이 계산
-    days_since_weekday = now.weekday() - weekday
+    if now.weekday() in weekday:
+        if now.time() < reset_time:
+            next_reset_day = now.weekday()
+            pre_reset_day = weekday[weekday.index(now.weekday()) - 1]
+        else:
+            next_reset_day = weekday[(weekday.index(now.weekday()) + 1) % len(weekday)]
+            pre_reset_day = now.weekday()
+    else:
+        for i in weekday:
+            if i > now.weekday():
+                next_reset_day = i
+                pre_reset_day = weekday[weekday.index(i) - 1]
+                break
+            else:
+                next_reset_day = weekday[0]
+                pre_reset_day = weekday[-1]
+
+    # 다음 초기화 요일에서 현재 요일까지의 차이 계산
+    days_since_pre_reset = now.weekday() - pre_reset_day
     
     # 다른 요일
-    if days_since_weekday > 0: 
-        pre_reset_time = datetime.combine(now.date() - timedelta(days = days_since_weekday), reset_time)
-    elif days_since_weekday < 0: 
-        pre_reset_time = datetime.combine(now.date() - timedelta(days = 7 + days_since_weekday), reset_time)
+    if days_since_pre_reset > 0: 
+        pre_reset_time = datetime.combine(now.date() - timedelta(days = days_since_pre_reset), reset_time)
+    elif days_since_pre_reset < 0: 
+        pre_reset_time = datetime.combine(now.date() - timedelta(days = 7 + days_since_pre_reset), reset_time)
     # 같은 요일
     else:
         if now.time() < reset_time: 
@@ -181,7 +197,10 @@ def weekly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
 
     # 요청시 체크유무대신 다음번 초기화 시간 리턴
     if output == 1:
-        return pre_reset_time + timedelta(days = 7)
+        pre_to_next = next_reset_day - pre_reset_day
+        if pre_to_next < 0: pre_to_next += 7
+        elif pre_to_next == 0: pre_to_next = 7
+        return pre_reset_time + timedelta(days = pre_to_next)
 
     lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
     if lastcheck < pre_reset_time: 
