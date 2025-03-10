@@ -3,7 +3,7 @@ import util
 import config
 import dialog as dia
 import draglist
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow, QScrollArea
 from PyQt5.QtCore import QTimer, QTime
 
 
@@ -36,6 +36,10 @@ class MyApp(QMainWindow):
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
         self.resize(self.window_width, self.window_height) #(x, y, width, height)
+
+        self.setMaximumSize(1920, 1080) # 최대 크기 설정
+        self.scroll_area = QScrollArea(self)
+        self.setCentralWidget(self.scroll_area)
 
         # 화면 중앙 정렬
         self.show()
@@ -78,29 +82,31 @@ class MyApp(QMainWindow):
 
 
     def show_grid(self):
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
+        central_widget = QWidget()
 
         # 그리드 레이아웃 생성
-        self.central_widget.main_layout = QGridLayout()
+        central_widget.main_layout = QGridLayout()
 
         for i in range(self.grid_row):
-            self.central_widget.main_layout.setRowMinimumHeight(i, 200) # 행 최소높이 설정
+            central_widget.main_layout.setRowMinimumHeight(i, 200) # 행 최소높이 설정
             for j in range(self.grid_col):
-                self.central_widget.main_layout.setColumnMinimumWidth(j, 300) # 열 최소너비 설정
+                central_widget.main_layout.setColumnMinimumWidth(j, 300) # 열 최소너비 설정
                 list_vbox = QVBoxLayout()
                 list_vbox.setSpacing(0)
                 list_vbox.setContentsMargins(0, 10, 0, 10) # (좌, 상, 우, 하) 여백
-                list_vbox.addWidget(self.todo_list[f'list{i * self.grid_col + j}'])
+                list_num = i * self.grid_col + j
+                list_vbox.addWidget(self.todo_list[f'list{list_num}'])
                 # 일정 추가 버튼
                 add_button = QPushButton('일정 추가', self)
                 # 버튼 클릭 시 add_todo 메소드 실행을 위한 정보 입력을 받는 다이얼로그 창을 띄움
                 add_button.clicked.connect(lambda _, row = i, col = j: self.open_add_todo_dialog(row, col)) 
                 list_vbox.addWidget(add_button)
-                self.central_widget.main_layout.addLayout(list_vbox, i, j)
+                central_widget.main_layout.addLayout(list_vbox, i, j)
         
         # 레이아웃을 창에 설정
-        self.central_widget.setLayout(self.central_widget.main_layout)
+        central_widget.setLayout(central_widget.main_layout)
+        self.scroll_area.setWidget(central_widget)
+        self.scroll_area.setWidgetResizable(True)
 
 
     def show_todo(self, row, col,  todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked):

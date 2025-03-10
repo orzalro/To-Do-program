@@ -119,7 +119,6 @@ class ConfigDialog(QDialog):
                 if f'list{i}' not in app.todo_list:
                     app.todo_list[f'list{i}'] = draglist.DragList(app)
                     app.todo_list[f'list{i}'].setDragDropMode(QAbstractItemView.InternalMove)
-        
         app.show_grid()
 
 
