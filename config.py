@@ -111,7 +111,7 @@ class ConfigDialog(QDialog):
                     resetparam1 = widget.findChild(QLabel, 'param1label').text()
 
                     todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
-                    self.todo_list[f'list{app.grid_row * app.grid_col - 1}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
+                    app.todo_list[f'list{app.grid_row * app.grid_col - 1}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
                 app.todo_list[f'list{i}'].clear()  # 기존 리스트 비우기
                 del app.todo_list[f'list{i}']  # 기존 리스트 삭제
         else:

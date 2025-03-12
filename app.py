@@ -30,14 +30,15 @@ class MyApp(QMainWindow):
         # Config 메뉴 생성 및 환경설정 액션 생성
         configmenu = menubar.addMenu('&Config')
         configAction = QAction('환경 설정', self)
-        configAction.triggered.connect(lambda: self.open_config_dialog())
+        configAction.triggered.connect(lambda: config.ConfigDialog(self).exec_())
         configmenu.addAction(configAction)
 
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
         self.resize(self.window_width, self.window_height) #(x, y, width, height)
-
         self.setMaximumSize(1920, 1080) # 최대 크기 설정
+
+        # 스크롤 영역 생성
         self.scroll_area = QScrollArea(self)
         self.setCentralWidget(self.scroll_area)
 
@@ -48,16 +49,16 @@ class MyApp(QMainWindow):
         app_frame.moveCenter(center_pos)
         self.move(app_frame.topLeft())
 
-        self.create_todo_list()
+        self.todo_list = {}
+        for i in range(self.grid_row):
+            for j in range(self.grid_col):
+                # 일정 리스트 (DragList(QListWidget))
+                self.todo_list[f'list{i * self.grid_col + j}'] = draglist.DragList(self)
+                self.todo_list[f'list{i * self.grid_col + j}'].setDragDropMode(QAbstractItemView.InternalMove)
+
         self.show_grid()
         
         util.load_data(self)
-
-
-    def open_config_dialog(self):
-        dialog = config.ConfigDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            print()
 
 
     def open_add_todo_dialog(self, row, col):
@@ -72,15 +73,6 @@ class MyApp(QMainWindow):
             util.save_data(self)
 
 
-    def create_todo_list(self):
-        self.todo_list = {}
-        for i in range(self.grid_row):
-            for j in range(self.grid_col):
-                # 일정 리스트 (DragList(QListWidget))
-                self.todo_list[f'list{i * self.grid_col + j}'] = draglist.DragList(self)
-                self.todo_list[f'list{i * self.grid_col + j}'].setDragDropMode(QAbstractItemView.InternalMove)
-
-
     def show_grid(self):
         central_widget = QWidget()
 
@@ -90,7 +82,7 @@ class MyApp(QMainWindow):
         for i in range(self.grid_row):
             central_widget.main_layout.setRowMinimumHeight(i, 200) # 행 최소높이 설정
             for j in range(self.grid_col):
-                central_widget.main_layout.setColumnMinimumWidth(j, 300) # 열 최소너비 설정
+                central_widget.main_layout.setColumnMinimumWidth(j, 305) # 열 최소너비 설정
                 list_vbox = QVBoxLayout()
                 list_vbox.setSpacing(0)
                 list_vbox.setContentsMargins(0, 10, 0, 10) # (좌, 상, 우, 하) 여백
@@ -107,10 +99,6 @@ class MyApp(QMainWindow):
         central_widget.setLayout(central_widget.main_layout)
         self.scroll_area.setWidget(central_widget)
         self.scroll_area.setWidgetResizable(True)
-
-
-    def show_todo(self, row, col,  todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked):
-        self.todo_list[f'list{row * 3 + col}'].add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked)
 
 
     def resizeEvent(self, event):

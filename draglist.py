@@ -14,10 +14,10 @@ class DragList(QListWidget):
         self.timer.timeout.connect(self.update_time)  # 1초마다 update_time 실행
         self.timer.start(1000)
 
-        self.itemDoubleClicked.connect(lambda: self.open_add_todo_dialog(self.currentItem()))
+        self.itemDoubleClicked.connect(lambda: self.open_edit_todo_dialog(self.currentItem()))
     
 
-    def open_add_todo_dialog(self, item):
+    def open_edit_todo_dialog(self, item):
         widget = self.itemWidget(item)
         todo_reset_method = widget.findChild(QLabel, 'methodlabel').text()
         todo_reset_time = widget.findChild(QLabel, 'timelabel').text()
@@ -116,16 +116,8 @@ class DragList(QListWidget):
         
     def update_param(self, item, reset_method, reset_time, param0, param1, checked):
         checkbox = QCheckBox()
-
-        if checked:
-            checkbox.setChecked(True)
-        else:
-            checkbox.setChecked(False)  # 초기 상태는 선택되지 않음
-        
-        # 디버그
-        #checkbox.clicked.connect(lambda: print(self.todo_list.row(item))) # 체크시 해당 아이템이 리스트의 몇번째 아이템인지 출력
-        #checkbox.clicked.connect(lambda: print(item.data(0))) # 체크시 해당 아이템의 이름 출력
-        #checkbox.clicked.connect(lambda: print(checkbox.checkState())) # 체크시 해당 아이템의 체크상태 출력
+        if checked: checkbox.setChecked(True)
+        else: checkbox.setChecked(False)  # 초기 상태는 선택되지 않음
         checkbox.clicked.connect(lambda: util.save_data(self.parent)) # 체크시 save 예정
 
         remove_button = QPushButton('X')
@@ -166,10 +158,8 @@ class DragList(QListWidget):
             methodlabel = QLabel('주기')
             next_reset_datetime = datetime.strptime(param1, '%Y-%m-%d %H:%M:%S') + timedelta(minutes = int(param0))
             cycle_label = f'{next_reset_datetime.strftime('%H:%M  %#m월 %#d일')}'
-
             param0label = QLabel(f'{param0}') # 초기화 주기 int
             param1label = QLabel(f'{param1}') # 기준 날짜 str
-
             timelabel = QLabel()
             textlabel = QLabel(f'주기 {cycle_label}')
 
@@ -181,20 +171,17 @@ class DragList(QListWidget):
         timelabel.setVisible(False)
         item_layout.addWidget(timelabel)
 
-        if 'param0label' not in locals():
-            param0label = QLabel()
-        if 'param1label' not in locals():
-            param1label = QLabel()
-
+        if 'param0label' not in locals():param0label = QLabel()
         param0label.setObjectName('param0label')
         param0label.setVisible(False)
         item_layout.addWidget(param0label)
 
+        if 'param1label' not in locals():param1label = QLabel()
         param1label.setObjectName('param1label')
         param1label.setVisible(False)
         item_layout.addWidget(param1label)
 
-        textlabel.setObjectName('textlabel') # 설정된 내용 표시용 QLabel
+        textlabel.setObjectName('textlabel') # 일정 설정 표시용 QLabel
         item_layout.addWidget(textlabel)
 
         next_reset_time_label = QLabel() # 남은 시간 표시용 QLabel
@@ -202,8 +189,10 @@ class DragList(QListWidget):
         item_layout.addWidget(next_reset_time_label) 
 
         item_layout.addStretch(1)
+
         checkbox.setObjectName('checkbox')
         item_layout.addWidget(checkbox)
+        
         remove_button.setObjectName('remove_button')
         item_layout.addWidget(remove_button)
 

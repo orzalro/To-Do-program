@@ -63,8 +63,9 @@ class AddTodoDialog(QDialog):
         self.cycle_btn.clicked.connect(lambda: (self.stacked_widget.setCurrentIndex(3), self.update_button_styles(3), self.update_button_state()))
         button_layout.addWidget(self.cycle_btn)
 
+        # 초기 선택된 방식 표시
         self.stacked_widget.setCurrentIndex(self.todo_reset_method)
-        self.update_button_styles(self.todo_reset_method) # 초기 선택된 버튼 표시
+        self.update_button_styles(self.todo_reset_method)
 
         layout.addRow(button_layout)
         layout.addWidget(self.stacked_widget)

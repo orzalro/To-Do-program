@@ -22,13 +22,13 @@ def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
     elif resetmethod == 1:
         split_timestr = resettime.split(':')
         resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])  # ex) 05:00(%H:%M) -> 300(Minute)
-        resetparam0 = resetparam0
+        resetparam0 = resetparam0 # 초기화 요일
         resetparam1 = -1
 
     elif resetmethod == 2:
         split_timestr = resettime.split(':')
         resettime = int(split_timestr[0]) * 60 + int(split_timestr[1])  # ex) 05:00(%H:%M) -> 300(Minute)
-        resetparam0 = resetparam0[:-1] # 일
+        resetparam0 = resetparam0[:-1] # 초기화 일자
         resetparam1 = -1
 
     elif resetmethod == 3: 
@@ -74,7 +74,7 @@ def load_data(app):
 
             checked, resetparam1 = reset_check(checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
 
-            app.show_todo(row, col, todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
+            app.todo_list[f'list{row * 3 + col}'].add_todo(todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
         
         config.update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         app.lastchecktime = app.config.get('Variables', 'lastchecktime')
