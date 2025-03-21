@@ -1,7 +1,7 @@
 import os
 import configparser
 import util
-import draglist
+import drag_list
 from datetime import datetime
 from PyQt5.QtWidgets import QDialog, QCheckBox, QVBoxLayout, QLabel, QHBoxLayout, QInputDialog, QPushButton, QWidget, QAbstractItemView
 from PyQt5.QtCore import Qt
@@ -117,7 +117,7 @@ class ConfigDialog(QDialog):
         else:
             for i in range(app.grid_row * app.grid_col):
                 if f'list{i}' not in app.todo_list:
-                    app.todo_list[f'list{i}'] = draglist.DragList(app)
+                    app.todo_list[f'list{i}'] = drag_list.DragList(app)
                     app.todo_list[f'list{i}'].setDragDropMode(QAbstractItemView.InternalMove)
         app.show_grid()
 

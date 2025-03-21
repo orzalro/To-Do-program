@@ -1,8 +1,8 @@
 import sys
 import util
 import config
-import dialog as dia
-import draglist
+import dialog
+import drag_list
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow, QScrollArea
 from PyQt5.QtCore import QTimer, QTime
 
@@ -53,7 +53,7 @@ class MyApp(QMainWindow):
         for i in range(self.grid_row):
             for j in range(self.grid_col):
                 # 일정 리스트 (DragList(QListWidget))
-                self.todo_list[f'list{i * self.grid_col + j}'] = draglist.DragList(self)
+                self.todo_list[f'list{i * self.grid_col + j}'] = drag_list.DragList(self)
                 self.todo_list[f'list{i * self.grid_col + j}'].setDragDropMode(QAbstractItemView.InternalMove)
 
         self.show_grid()
@@ -62,11 +62,11 @@ class MyApp(QMainWindow):
 
 
     def open_add_todo_dialog(self, row, col):
-        dialog = dia.AddTodoDialog()
-        if dialog.exec_() == QDialog.Accepted:
+        add_todo_dialog = dialog.AddTodoDialog()
+        if add_todo_dialog.exec_() == QDialog.Accepted:
             # 다이얼로그에서 받은 데이터
-            todo_title = dialog.title_input.text()
-            todo_reset_method, todo_reset_time, resetparam0, resetparam1 = dialog.get_data()
+            todo_title = add_todo_dialog.title_input.text()
+            todo_reset_method, todo_reset_time, resetparam0, resetparam1 = add_todo_dialog.get_data()
             todo_list = self.todo_list[f'list{row * self.grid_col + col}']
             todo_list.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1)
 
