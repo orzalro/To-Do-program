@@ -20,7 +20,8 @@ class ConfigDialog(QDialog):
     def init_ui(self):
         # 창 설정
         self.setWindowTitle('환경설정')
-        self.setGeometry(810, 340, 300, 200)
+        self.resize(300, 200)
+        self.center_to_parent() # 부모 창의 중앙에 위치하게 정렬
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignCenter)
@@ -81,6 +82,23 @@ class ConfigDialog(QDialog):
         layout.addWidget(grid_config)
 
         self.setLayout(layout)
+
+
+    def center_to_parent(self):
+        # 부모 창의 중심 좌표 계산
+        parent_geometry = self.parent.geometry()
+        print(parent_geometry)
+        parent_center_x = parent_geometry.x() + parent_geometry.width() // 2
+        parent_center_y = parent_geometry.y() + parent_geometry.height() // 2
+
+        # 다이얼로그 창의 위치 계산
+        dialog_width = self.width()
+        dialog_height = self.height()
+        dialog_x = parent_center_x - dialog_width // 2
+        dialog_y = parent_center_y - dialog_height // 2
+
+        # 다이얼로그 창 위치 설정
+        self.move(dialog_x, dialog_y)
 
 
     # 옵션 수정용 텍스트 입력 받기

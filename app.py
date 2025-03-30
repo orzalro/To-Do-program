@@ -36,7 +36,6 @@ class MyApp(QMainWindow):
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
         self.resize(self.window_width, self.window_height) #(x, y, width, height)
-        self.setMaximumSize(1920, 1080) # 최대 크기 설정
 
         # 스크롤 영역 생성
         self.scroll_area = QScrollArea(self)
