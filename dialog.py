@@ -216,7 +216,7 @@ class AddTodoDialog(QDialog):
         layout.addRow('초기화 시간:', self.monthly_reset_time)
         
         self.monthly_resetparam0 = QLineEdit(self)
-        self.monthly_resetparam0.setText(str(self.resetparam0 if self.resetparam0 != -1 else ''))
+        self.monthly_resetparam0.setText(str(self.resetparam0 if self.resetparam0 != -1 and self.todo_reset_method == 2 else ''))
         self.monthly_resetparam0.setPlaceholderText('1-31(일)')
         layout.addRow('초기화 날짜:', self.monthly_resetparam0)
 
@@ -236,11 +236,11 @@ class AddTodoDialog(QDialog):
 
         resetparam0_layout = QHBoxLayout()
         self.cycle_resetparam0_day = QLineEdit(self)
-        self.cycle_resetparam0_day.setText(str(int(self.resetparam0) // 1440) if self.resetparam0 != -1 else '0')
+        self.cycle_resetparam0_day.setText(str(int(self.resetparam0) // 1440) if self.resetparam0 != -1 and self.todo_reset_method == 3 else '0')
         self.cycle_resetparam0_hour = QLineEdit(self)
-        self.cycle_resetparam0_hour.setText(str((int(self.resetparam0) % 1440) // 60) if self.resetparam0 != -1 else '0')
+        self.cycle_resetparam0_hour.setText(str((int(self.resetparam0) % 1440) // 60) if self.resetparam0 != -1 and self.todo_reset_method == 3 else '0')
         self.cycle_resetparam0_minute = QLineEdit(self)
-        self.cycle_resetparam0_minute.setText(str((int(self.resetparam0) % 1440) % 60) if self.resetparam0 != -1 else '0')
+        self.cycle_resetparam0_minute.setText(str((int(self.resetparam0) % 1440) % 60) if self.resetparam0 != -1 and self.todo_reset_method == 3 else '0')
         resetparam0_layout.addWidget(self.cycle_resetparam0_day)
         resetparam0_layout.addWidget(QLabel('일', self))
         resetparam0_layout.addWidget(self.cycle_resetparam0_hour)
