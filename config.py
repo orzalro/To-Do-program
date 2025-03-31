@@ -87,7 +87,6 @@ class ConfigDialog(QDialog):
     def center_to_parent(self):
         # 부모 창의 중심 좌표 계산
         parent_geometry = self.parent.geometry()
-        print(parent_geometry)
         parent_center_x = parent_geometry.x() + parent_geometry.width() // 2
         parent_center_y = parent_geometry.y() + parent_geometry.height() // 2
 

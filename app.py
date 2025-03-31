@@ -61,7 +61,7 @@ class MyApp(QMainWindow):
 
 
     def open_add_todo_dialog(self, row, col):
-        add_todo_dialog = dialog.AddTodoDialog()
+        add_todo_dialog = dialog.AddTodoDialog(self)
         if add_todo_dialog.exec_() == QDialog.Accepted:
             # 다이얼로그에서 받은 데이터
             todo_title = add_todo_dialog.title_input.text()

@@ -24,7 +24,7 @@ class DragList(QListWidget):
         resetparam0 = widget.findChild(QLabel, 'param0label').text()
         resetparam1 = widget.findChild(QLabel, 'param1label').text()
         todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
-        dialog = dia.AddTodoDialog(item.text(), todo_reset_method, todo_reset_time, resetparam0, resetparam1)
+        dialog = dia.AddTodoDialog(self.parent, item.text(), todo_reset_method, todo_reset_time, resetparam0, resetparam1)
         if dialog.exec_() == QDialog.Accepted:
             # 다이얼로그에서 받은 데이터
             item.setData(0, dialog.title_input.text())

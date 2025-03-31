@@ -6,8 +6,9 @@ from datetime import datetime
 
 
 class AddTodoDialog(QDialog):
-    def __init__(self, todo_title='',todo_reset_method=0, todo_reset_time=0, resetparam0=-1, resetparam1=-1):
-        super().__init__()
+    def __init__(self, parent = None, todo_title='',todo_reset_method=0, todo_reset_time=0, resetparam0=-1, resetparam1=-1):
+        super().__init__(parent)
+        self.parent = parent
         self.todo_reset_method = todo_reset_method
         self.todo_reset_time = int(todo_reset_time)
         self.resetparam0 = resetparam0
@@ -15,10 +16,15 @@ class AddTodoDialog(QDialog):
         self.init_ui(todo_title)
 
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.center_to_parent()
+
+
     def init_ui(self, todo_title):
         # 창 설정
         self.setWindowTitle('할 일 추가')
-        self.setGeometry(810, 340, 300, 400)
+        self.resize(300, 450)
 
         # 레이아웃 설정
         layout = QFormLayout(self)
@@ -85,6 +91,22 @@ class AddTodoDialog(QDialog):
             line_edit.textChanged.connect(self.update_button_state)
 
 
+    def center_to_parent(self):
+        # 부모 창의 중심 좌표 계산
+        parent_geometry = self.parent.geometry()
+        parent_center_x = parent_geometry.x() + parent_geometry.width() // 2
+        parent_center_y = parent_geometry.y() + parent_geometry.height() // 2
+
+        # 다이얼로그 창의 위치 계산
+        dialog_width = self.width()
+        dialog_height = self.height()
+        dialog_x = parent_center_x - dialog_width // 2
+        dialog_y = parent_center_y - dialog_height // 2
+
+        # 다이얼로그 창 위치 설정
+        self.move(dialog_x, dialog_y)
+
+
     def update_button_state(self):
         # 입력 필드가 비어 있으면 OK 버튼을 비활성화
         current_index = self.stacked_widget.currentIndex()
@@ -96,7 +118,9 @@ class AddTodoDialog(QDialog):
                     state = 1
                     break
         elif current_index == 2: state = bool(self.monthly_resetparam0.text().strip())
-        elif current_index == 3: state = bool(self.cycle_resetparam0.text().strip())
+        elif current_index == 3 and bool(self.cycle_resetparam0_day.text() and self.cycle_resetparam0_hour.text() and self.cycle_resetparam0_minute.text()):
+            state = bool(int(self.cycle_resetparam0_day.text().strip()) > 0 or int(self.cycle_resetparam0_hour.text().strip()) > 0 or int(self.cycle_resetparam0_minute.text().strip()) > 0)
+        else: state = False
         state = bool(self.title_input.text().strip() and state)
         self.ok_button.setEnabled(state)
 
@@ -160,6 +184,7 @@ class AddTodoDialog(QDialog):
         layout = QFormLayout()
         self.daily_reset_time = self.init_time_edit()
         layout.addRow('초기화 시간:', self.daily_reset_time)
+
         self.daily_layout.setLayout(layout)
 
 
@@ -167,6 +192,7 @@ class AddTodoDialog(QDialog):
         layout = QFormLayout()
         self.weekly_reset_time = self.init_time_edit()
         layout.addRow('초기화 시간:', self.weekly_reset_time)
+
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(0)
         self.weekday_btns = []
@@ -180,6 +206,7 @@ class AddTodoDialog(QDialog):
             btn_layout.addWidget(weekday_btn)
             self.weekday_btns.append(weekday_btn)
         layout.addRow('초기화 요일:', btn_layout)
+
         self.weekly_layout.setLayout(layout)
 
 
@@ -187,10 +214,12 @@ class AddTodoDialog(QDialog):
         layout = QFormLayout()
         self.monthly_reset_time = self.init_time_edit()
         layout.addRow('초기화 시간:', self.monthly_reset_time)
+        
         self.monthly_resetparam0 = QLineEdit(self)
         self.monthly_resetparam0.setText(str(self.resetparam0 if self.resetparam0 != -1 else ''))
         self.monthly_resetparam0.setPlaceholderText('1-31(일)')
         layout.addRow('초기화 날짜:', self.monthly_resetparam0)
+
         self.monthly_layout.setLayout(layout)
 
 
@@ -200,13 +229,26 @@ class AddTodoDialog(QDialog):
             default_date = QDate.fromString(self.resetparam1[:10], 'yyyy-MM-dd')
         else:
             default_date = QDate.currentDate()
+
         layout = QFormLayout()
         self.cycle_reset_time = self.init_time_edit()
         layout.addRow('기준 시간:', self.cycle_reset_time)
-        self.cycle_resetparam0 = QLineEdit(self)
-        self.cycle_resetparam0.setText(str(self.resetparam0) if self.resetparam0 != -1 else '')
-        self.cycle_resetparam0.setPlaceholderText('(분)')
-        layout.addRow('초기화 주기:', self.cycle_resetparam0)
+
+        resetparam0_layout = QHBoxLayout()
+        self.cycle_resetparam0_day = QLineEdit(self)
+        self.cycle_resetparam0_day.setText(str(int(self.resetparam0) // 1440) if self.resetparam0 != -1 else '0')
+        self.cycle_resetparam0_hour = QLineEdit(self)
+        self.cycle_resetparam0_hour.setText(str((int(self.resetparam0) % 1440) // 60) if self.resetparam0 != -1 else '0')
+        self.cycle_resetparam0_minute = QLineEdit(self)
+        self.cycle_resetparam0_minute.setText(str((int(self.resetparam0) % 1440) % 60) if self.resetparam0 != -1 else '0')
+        resetparam0_layout.addWidget(self.cycle_resetparam0_day)
+        resetparam0_layout.addWidget(QLabel('일', self))
+        resetparam0_layout.addWidget(self.cycle_resetparam0_hour)
+        resetparam0_layout.addWidget(QLabel('시', self))
+        resetparam0_layout.addWidget(self.cycle_resetparam0_minute)
+        resetparam0_layout.addWidget(QLabel('분', self))
+        layout.addRow('초기화 주기:', resetparam0_layout)
+
         self.cycle_resetparam1 = QLabel('기준 날짜를 선택하세요', self)
         self.cycle_calendar = QCalendarWidget(self)
         self.cycle_calendar.setSelectedDate(default_date)
@@ -214,6 +256,7 @@ class AddTodoDialog(QDialog):
         self.cycle_calendar.clicked.connect(self.show_calender_date)
         layout.addWidget(self.cycle_calendar)
         layout.addWidget(self.cycle_resetparam1)
+        
         self.cycle_layout.setLayout(layout)
     
 
@@ -241,5 +284,6 @@ class AddTodoDialog(QDialog):
         elif current_index == 3:
             reset_time = self.cycle_reset_time.time().toPyTime()
             base_datetime = datetime.combine(datetime.strptime(self.cycle_resetparam1.text()[7:], '%Y-%m-%d'), reset_time)
-            return current_index, -1, int(self.cycle_resetparam0.text()), base_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            reset_period = int(self.cycle_resetparam0_day.text()) * 1440 + int(self.cycle_resetparam0_hour.text()) * 60 + int(self.cycle_resetparam0_minute.text())
+            return current_index, -1, reset_period, base_datetime.strftime('%Y-%m-%d %H:%M:%S')
         return ''
