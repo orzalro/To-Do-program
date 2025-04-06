@@ -14,10 +14,11 @@ class ConfigDialog(QDialog):
     def __init__(self, parent = None):
         super().__init__(parent)
         self.parent = parent
-        self.init_ui()
+        self.config_dialog_init_ui()
 
 
-    def init_ui(self):
+    @util.elapsed_time_decorator
+    def config_dialog_init_ui(self):
         # 창 설정
         self.setWindowTitle('환경설정')
         self.resize(300, 200)

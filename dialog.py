@@ -1,3 +1,4 @@
+import util
 from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QHBoxLayout, QDialog, QFormLayout, QDialogButtonBox, QStackedWidget, QLabel, QCalendarWidget
 from PyQt5.QtWidgets import QTimeEdit, QAbstractSpinBox
 from PyQt5.QtCore import QDate, QTime
@@ -13,7 +14,7 @@ class AddTodoDialog(QDialog):
         self.todo_reset_time = int(todo_reset_time)
         self.resetparam0 = resetparam0
         self.resetparam1 = resetparam1
-        self.init_ui(todo_title)
+        self.todo_dialog_init_ui(todo_title)
 
 
     def showEvent(self, event):
@@ -21,7 +22,8 @@ class AddTodoDialog(QDialog):
         self.center_to_parent()
 
 
-    def init_ui(self, todo_title):
+    @util.elapsed_time_decorator
+    def todo_dialog_init_ui(self, todo_title):
         # 창 설정
         self.setWindowTitle('할 일 추가')
         self.resize(300, 450)

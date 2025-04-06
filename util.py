@@ -1,12 +1,24 @@
+DATA_FILE_PATH = 'data/userdata.json'
+
+
+def elapsed_time_decorator(func):
+    """실행 시간 측정용 데코레이터"""
+    def wrapper(*args, **kwargs):
+        start_time = datetime.now()
+        result = func(*args, **kwargs)
+        end_time = datetime.now()
+        elapsed_time = end_time - start_time
+        print(f'[{end_time.hour:02d}:{end_time.minute:02d}] {func.__name__} 소요 시간: {elapsed_time.total_seconds():.6f}s')
+        return result
+    return wrapper
+
+
 from datetime import datetime, time, timedelta
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import os
 from PyQt5.QtWidgets import QCheckBox, QLabel
 import config
-
-
-DATA_FILE_PATH = 'data/userdata.json'
 
 
 def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
@@ -56,6 +68,7 @@ def reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, res
 
 # json 구성
 # ['row', 'col', 'name', 'checked', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1']
+@elapsed_time_decorator
 def load_data(app):
     # json에서 유저 일정 데이터 읽기
     if os.path.exists(DATA_FILE_PATH):
@@ -80,9 +93,8 @@ def load_data(app):
         app.lastchecktime = app.config.get('Variables', 'lastchecktime')
             
 
+@elapsed_time_decorator
 def save_data(app):
-    start_time = datetime.now()
-
     data = []
     for row in range(app.grid_row):
         for col in range(app.grid_col):
@@ -117,11 +129,6 @@ def save_data(app):
     # 마지막체크시간 config에 저장
     config.update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     app.lastchecktime = app.config.get('Variables', 'lastchecktime')
-
-    # save_data() 소요 시간 체크
-    end_time = datetime.now()
-    elapsed_time = end_time - start_time
-    print(f'[{end_time.hour:02d}:{end_time.minute:02d}] 저장 완료, 소요 시간: {elapsed_time.total_seconds():.6f}s')
 
 
 #     1. 시간별(daily), 요일별(weekly), 매 달 ~일 등(monthly)

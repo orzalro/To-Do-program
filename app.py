@@ -11,11 +11,12 @@ class MyApp(QMainWindow):
     def __init__(self):
         super().__init__()
         config.read_config(self)
-        self.init_ui()
+        self.main_window_init_ui()
         self.auto_save()
 
 
-    def init_ui(self):
+    @util.elapsed_time_decorator
+    def main_window_init_ui(self):
         # 메뉴바 생성 및 File 메뉴 생성
         menubar = self.menuBar()
         menubar.setNativeMenuBar(False)
