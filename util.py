@@ -15,8 +15,8 @@ def elapsed_time_decorator(func):
 
 from datetime import datetime, time, timedelta
 from dateutil.relativedelta import relativedelta
-import pandas as pd
 import os
+import json
 from PyQt5.QtWidgets import QCheckBox, QLabel
 import config
 
@@ -72,25 +72,24 @@ def reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, res
 def load_data(app):
     # json에서 유저 일정 데이터 읽기
     if os.path.exists(DATA_FILE_PATH):
-        df = pd.read_json(DATA_FILE_PATH, encoding='utf-8', orient='records', lines=True)
+        with open(DATA_FILE_PATH, 'r', encoding='utf-8') as f:
+            data = [json.loads(line) for line in f]
+            for i in data:
+                row = i[0]
+                col = i[1]
+                todoname = i[2]
+                checked = i[3]
+                resetmethod = i[4]
+                resettime = i[5]
+                resetparam0 = i[6]
+                resetparam1 = i[7]
 
-        # 일정 갯수에 따라 반복문 실행
-        for i in range(len(df)):
-            row = df.iloc[i, 0]
-            col = df.iloc[i, 1]
-            todoname = df.iloc[i, 2]
-            checked = df.iloc[i, 3]
-            resetmethod = df.iloc[i, 4]
-            resettime = df.iloc[i, 5]
-            resetparam0 = df.iloc[i, 6]
-            resetparam1 = df.iloc[i, 7]
+                checked, resetparam1 = reset_check(checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
 
-            checked, resetparam1 = reset_check(checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
-
-            app.todo_list[f'list{row * 3 + col}'].add_todo(todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
-        
-        config.update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-        app.lastchecktime = app.config.get('Variables', 'lastchecktime')
+                app.todo_list[f'list{row * 3 + col}'].add_todo(todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
+            
+            config.update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            app.lastchecktime = app.config.get('Variables', 'lastchecktime')
             
 
 @elapsed_time_decorator
@@ -123,8 +122,10 @@ def save_data(app):
                         todo_list.update_param(item, resetmethod, resettime, resetparam0, new_resetparam1, checked)
                 data.append([row, col, todoname, checked, resetmethod, resettime, resetparam0, new_resetparam1])
 
-    df = pd.DataFrame(data, columns=['row', 'col', 'name', 'checked', 'reset', 'reset_time_input', 'resetparam0', 'resetparam1'])
-    df.to_json(DATA_FILE_PATH, force_ascii=False, orient='records', lines=True)
+    with open(DATA_FILE_PATH, 'w', encoding='utf-8') as f:
+        for item in data:
+            json_line = json.dumps(item, ensure_ascii=False)
+            f.write(json_line + '\n')
 
     # 마지막체크시간 config에 저장
     config.update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))

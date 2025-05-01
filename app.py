@@ -12,6 +12,7 @@ class MyApp(QMainWindow):
         super().__init__()
         config.read_config(self)
         self.main_window_init_ui()
+        util.load_data(self)
         self.auto_save()
 
 
@@ -36,7 +37,7 @@ class MyApp(QMainWindow):
 
         # 창의 제목과 크기 설정
         self.setWindowTitle('일정 관리 앱')
-        self.resize(self.window_width, self.window_height) #(x, y, width, height)
+        self.resize(self.window_width, self.window_height)
 
         # 스크롤 영역 생성
         self.scroll_area = QScrollArea(self)
@@ -57,8 +58,6 @@ class MyApp(QMainWindow):
                 self.todo_list[f'list{i * self.grid_col + j}'].setDragDropMode(QAbstractItemView.InternalMove)
 
         self.show_grid()
-        
-        util.load_data(self)
 
 
     def open_add_todo_dialog(self, row, col):

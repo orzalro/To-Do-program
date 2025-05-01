@@ -162,6 +162,8 @@ def read_config(app):
     if os.path.exists(CONFIG_FILE_PATH):
         app.config.read(CONFIG_FILE_PATH)
     else: # 경로에 config파일이 없을 시 생성 후 read_config 재호출
+        if not os.path.exists(CONFIG_FILE_PATH.split('/')[0]):
+            os.mkdir(CONFIG_FILE_PATH.split('/')[0])
         app.config['Settings'] = {}
         app.config['Variables'] = {}
         write_config(app)
