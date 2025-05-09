@@ -112,9 +112,9 @@ def save_data(app):
 
                 resetmethod, resettime, resetparam0, resetparam1 = formatting_data(resetmethod, resettime, resetparam0, resetparam1)
 
-                # 리셋체크 후 체크 상태가 바뀔 경우 업데이트
                 checked, new_resetparam1 = reset_check(box_checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
-                if checked != box_checked: 
+                # 초기화 시간을 지날 경우 업데이트
+                if datetime.now().hour * 60 + datetime.now().minute == resettime:
                     todo_list.update_param(item, resetmethod, resettime, resetparam0, new_resetparam1, checked)
                 elif resetmethod == 3: # 주기 리셋의 경우 현재 시간이 다음 리셋 시간 이후인 경우 기준 시간을 변경
                     next_reset_datetime = datetime.strptime(resetparam1, '%Y-%m-%d %H:%M:%S') + timedelta(minutes = int(resetparam0))
