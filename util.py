@@ -86,7 +86,7 @@ def load_data(app):
 
                 checked, resetparam1 = reset_check(checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
 
-                app.todo_list[f'list{row * 3 + col}'].add_todo(todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
+                app.todo_list[f'list{row * app.grid_col + col}'].add_todo(todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
             
             config.update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             app.lastchecktime = app.config.get('Variables', 'lastchecktime')
