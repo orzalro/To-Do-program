@@ -263,7 +263,7 @@ class AddTodoDialog(QDialog):
     
 
     def show_calender_date(self, date):
-        self.cycle_resetparam1.setText(f'기준 날짜: {date.toString('yyyy-MM-dd')}')
+        self.cycle_resetparam1.setText(f"기준 날짜: {date.toString('yyyy-MM-dd')}")
 
 
     # 다이얼로그 데이터 리턴
