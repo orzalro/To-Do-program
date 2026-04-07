@@ -34,14 +34,14 @@ jobs:
           python -m pip install pyinstaller PyQt5 python-dateutil
 
       - name: Build EXE
-        run: pyinstaller --onefile --noconsole app.py
+        run: pyinstaller --onefile --noconsole --name "To-do" app.py
 
       - name: Prepare release asset
         id: package
         shell: pwsh
         run: |
-          $assetName = "todoprogram-${{ inputs.tag }}.exe"
-          Copy-Item -LiteralPath "dist\app.exe" -Destination "dist\$assetName" -Force
+          $assetName = "To-do.exe"
+          Copy-Item -LiteralPath "dist\To-do.exe" -Destination "dist\$assetName" -Force
           "asset_name=$assetName" >> $env:GITHUB_OUTPUT
 
       - name: Upload build artifact
