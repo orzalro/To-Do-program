@@ -154,6 +154,7 @@ class MyApp(QMainWindow):
         self.block_clipboard = None
         self.selected_block_index = 0
         self.block_frames = {}
+        self.block_title_labels = {}
         self.main_window_init_ui()
         util.load_data(self)
         self.auto_save()
@@ -272,6 +273,12 @@ class MyApp(QMainWindow):
             block_frame.update()
 
 
+    def refresh_block_title(self, block_index):
+        block_title = self.block_title_labels.get(block_index)
+        if block_title is not None:
+            block_title.setText(self.get_block_name(block_index))
+
+
     def get_block_name(self, block_index):
         util.ensure_block_data(self)
         return self.block_data[block_index]['name']
@@ -324,8 +331,9 @@ class MyApp(QMainWindow):
         self.apply_block_snapshot(target_index, source_snapshot)
         util.save_block_data(self)
         util.save_data(self)
+        self.refresh_block_title(source_index)
+        self.refresh_block_title(target_index)
         self.select_block(target_index)
-        self.show_grid()
 
 
     def copy_block(self, block_index):
@@ -359,7 +367,7 @@ class MyApp(QMainWindow):
         self.set_block_name(block_index, self.block_clipboard['name'])
         todo_list.load_todo_payloads(self.block_clipboard['todos'])
         util.save_data(self)
-        self.show_grid()
+        self.refresh_block_title(block_index)
 
 
     def paste_selected_block(self):
@@ -389,7 +397,7 @@ class MyApp(QMainWindow):
         self.set_block_name(block_index, util.default_block_name(block_index))
         self.todo_list[f'list{block_index}'].clear()
         util.save_data(self)
-        self.show_grid()
+        self.refresh_block_title(block_index)
 
 
     def open_rename_block_dialog(self, block_index):
@@ -398,7 +406,7 @@ class MyApp(QMainWindow):
         text, ok = QInputDialog.getText(self, '블럭 이름', '블럭 이름을 입력하세요.', text = current_name)
         if ok and text.strip():
             self.set_block_name(block_index, text)
-            self.show_grid()
+            self.refresh_block_title(block_index)
 
 
     def create_block_menu_button(self, row, col, block_index):
@@ -472,6 +480,7 @@ class MyApp(QMainWindow):
 
         block_title = BlockTitleLabel(self, block_index, self.get_block_name(block_index))
         block_title.setObjectName('blockTitle')
+        self.block_title_labels[block_index] = block_title
         header_layout.addWidget(block_title)
         header_layout.addStretch(1)
         header_layout.addWidget(self.create_block_menu_button(row, col, block_index))
@@ -516,6 +525,7 @@ class MyApp(QMainWindow):
         central_widget.main_layout.setSpacing(12)
 
         self.block_frames = {}
+        self.block_title_labels = {}
         for i in range(self.grid_row):
             central_widget.main_layout.setRowMinimumHeight(i, 200)
             for j in range(self.grid_col):

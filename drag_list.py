@@ -203,6 +203,7 @@ class DragList(QListWidget):
 
         next_reset_time_label = QLabel() # 남은 시간 표시용 QLabel
         next_reset_time_label.setObjectName('next_reset_time_label')
+        next_reset_time_label.setFont(textlabel.font())
         item_layout.addWidget(next_reset_time_label) 
 
         item_layout.addStretch(1)
