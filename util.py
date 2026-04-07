@@ -1,4 +1,5 @@
 DATA_FILE_PATH = 'data/userdata.json'
+BLOCK_DATA_FILE_PATH = 'data/blockdata.json'
 
 
 def elapsed_time_decorator(func):
@@ -19,6 +20,55 @@ import os
 import json
 from PyQt5.QtWidgets import QCheckBox, QLabel
 import config
+
+
+def default_block_name(block_index):
+    return f'블럭 {block_index + 1}'
+
+
+def ensure_block_data(app, total_blocks = None):
+    if total_blocks is None:
+        total_blocks = app.grid_row * app.grid_col
+
+    if not hasattr(app, 'block_data') or not isinstance(app.block_data, list):
+        app.block_data = []
+
+    while len(app.block_data) < total_blocks:
+        app.block_data.append({'name': default_block_name(len(app.block_data))})
+
+    for i, block in enumerate(app.block_data):
+        if not isinstance(block, dict):
+            app.block_data[i] = {'name': default_block_name(i)}
+            continue
+
+        name = str(block.get('name', '')).strip()
+        if not name:
+            block['name'] = default_block_name(i)
+
+    return app.block_data
+
+
+def load_block_data(app):
+    app.block_data = []
+
+    if os.path.exists(BLOCK_DATA_FILE_PATH):
+        try:
+            with open(BLOCK_DATA_FILE_PATH, 'r', encoding='utf-8') as f:
+                block_data = json.load(f)
+            if isinstance(block_data, list):
+                app.block_data = block_data
+        except (json.JSONDecodeError, OSError):
+            app.block_data = []
+
+    ensure_block_data(app)
+
+
+def save_block_data(app):
+    ensure_block_data(app)
+    os.makedirs(os.path.dirname(BLOCK_DATA_FILE_PATH), exist_ok = True)
+
+    with open(BLOCK_DATA_FILE_PATH, 'w', encoding='utf-8') as f:
+        json.dump(app.block_data, f, ensure_ascii = False, indent = 2)
 
 
 def formatting_data(resetmethod, resettime, resetparam0, resetparam1):

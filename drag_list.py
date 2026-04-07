@@ -17,6 +17,18 @@ class DragList(QListWidget):
         self.itemDoubleClicked.connect(lambda: self.open_edit_todo_dialog(self.currentItem()))
     
 
+    def mousePressEvent(self, event):
+        self.parent.clear_todo_item_selection(self)
+        self.parent.clear_block_selection()
+        super().mousePressEvent(event)
+
+
+    def focusInEvent(self, event):
+        self.parent.clear_todo_item_selection(self)
+        self.parent.clear_block_selection()
+        super().focusInEvent(event)
+
+
     def open_edit_todo_dialog(self, item):
         widget = self.itemWidget(item)
         todo_reset_method = widget.findChild(QLabel, 'methodlabel').text()
@@ -114,6 +126,11 @@ class DragList(QListWidget):
                 item.setBackground(QBrush())
 
         
+    def bind_selection_widgets(self, widgets):
+        for widget in widgets:
+            self.parent.bind_block_interaction(widget, 'clear')
+
+
     def update_param(self, item, reset_method, reset_time, param0, param1, checked):
         checkbox = QCheckBox()
         if checked: checkbox.setChecked(True)
@@ -157,7 +174,7 @@ class DragList(QListWidget):
         elif reset_method == 3:
             methodlabel = QLabel('주기')
             next_reset_datetime = datetime.strptime(param1, '%Y-%m-%d %H:%M:%S') + timedelta(minutes = int(param0))
-            cycle_label = f'{next_reset_datetime.strftime('%H:%M  %#m월 %#d일')}'
+            cycle_label = next_reset_datetime.strftime('%H:%M  %#m월 %#d일')
             param0label = QLabel(f'{param0}') # 초기화 주기 int
             param1label = QLabel(f'{param1}') # 기준 날짜 str
             timelabel = QLabel()
@@ -197,6 +214,7 @@ class DragList(QListWidget):
         item_layout.addWidget(remove_button)
 
         item_layout.setSpacing(8)
+        self.bind_selection_widgets([widget, textlabel, next_reset_time_label, checkbox, remove_button])
 
         self.setItemWidget(item, widget)
 
@@ -218,6 +236,47 @@ class DragList(QListWidget):
             
         else:
             print('할 일을 입력해주세요.')
+
+
+    def get_todo_payloads(self):
+        payloads = []
+
+        for i in range(self.count()):
+            item = self.item(i)
+            widget = self.itemWidget(item)
+
+            todo_title = item.data(0)
+            checked = widget.findChild(QCheckBox, 'checkbox').isChecked()
+            todo_reset_method = widget.findChild(QLabel, 'methodlabel').text()
+            todo_reset_time = widget.findChild(QLabel, 'timelabel').text()
+            resetparam0 = widget.findChild(QLabel, 'param0label').text()
+            resetparam1 = widget.findChild(QLabel, 'param1label').text()
+
+            todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
+            payloads.append({
+                'title': todo_title,
+                'checked': 1 if checked else 0,
+                'reset_method': todo_reset_method,
+                'reset_time': todo_reset_time,
+                'resetparam0': resetparam0,
+                'resetparam1': resetparam1,
+            })
+
+        return payloads
+
+
+    def load_todo_payloads(self, payloads):
+        self.clear()
+
+        for payload in payloads:
+            self.add_todo(
+                payload['title'],
+                payload['reset_method'],
+                payload['reset_time'],
+                payload['resetparam0'],
+                payload['resetparam1'],
+                payload['checked'],
+            )
 
 
     def remove_todo(self, item):
