@@ -4,9 +4,9 @@
 ## uv usage
 
 - Install runtime dependencies: `uv sync`
-- Run the app: `uv run python app.py`
+- Run the app: `uv run python main.py`
 - Install build dependencies: `uv sync --group dev`
-- Build the Windows EXE: `uv run pyinstaller --onefile --noconsole --name "To-do" app.py`
+- Build the Windows EXE: `uv run pyinstaller --onefile --noconsole --name "To-do" main.py`
 
 ## 주요 기능
 

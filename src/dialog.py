@@ -1,4 +1,4 @@
-import util
+from . import util
 from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QHBoxLayout, QDialog, QFormLayout, QDialogButtonBox, QStackedWidget, QLabel, QCalendarWidget
 from PyQt5.QtWidgets import QTimeEdit, QAbstractSpinBox
 from PyQt5.QtCore import QDate, QTime

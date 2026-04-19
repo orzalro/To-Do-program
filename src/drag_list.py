@@ -1,5 +1,5 @@
-import util
-import dialog as dia
+from . import dialog as dia
+from . import util
 from PyQt5.QtWidgets import QWidget, QPushButton, QListWidget, QCheckBox, QListWidgetItem, QHBoxLayout
 from PyQt5.QtWidgets import QLabel, QAbstractItemView, QMessageBox, QDialog
 from PyQt5.QtCore import Qt, QTimer

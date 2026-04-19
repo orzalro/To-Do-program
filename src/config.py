@@ -1,7 +1,6 @@
 import os
 import configparser
-import util
-import drag_list
+from . import drag_list, util
 from datetime import datetime
 from PyQt5.QtWidgets import QDialog, QCheckBox, QVBoxLayout, QLabel, QHBoxLayout, QInputDialog, QPushButton, QWidget, QAbstractItemView
 from PyQt5.QtCore import Qt

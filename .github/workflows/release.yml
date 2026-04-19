@@ -35,7 +35,7 @@ jobs:
         run: uv sync --locked --group dev
 
       - name: Build EXE
-        run: uv run pyinstaller --onefile --noconsole --name "To-do" app.py
+        run: uv run pyinstaller --onefile --noconsole --name "To-do" main.py
 
       - name: Prepare release asset
         id: package

@@ -1,8 +1,5 @@
 import sys
-import util
-import config
-import dialog
-import drag_list
+from . import config, dialog, drag_list, util
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow, QScrollArea, QHBoxLayout, QLabel, QFrame, QToolButton, QMenu, QInputDialog, QMessageBox
 from PyQt5.QtCore import QTimer, QTime, Qt, QEvent, QMimeData
 from PyQt5.QtGui import QDrag
@@ -563,6 +560,11 @@ class MyApp(QMainWindow):
         util.save_data(self)
 
 
-app = QApplication(sys.argv)
-window = MyApp()
-sys.exit(app.exec_())
+def main():
+    app = QApplication(sys.argv)
+    app.main_window = MyApp()
+    return app.exec_()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

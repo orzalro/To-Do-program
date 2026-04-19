@@ -19,7 +19,7 @@ from dateutil.relativedelta import relativedelta
 import os
 import json
 from PyQt5.QtWidgets import QCheckBox, QLabel
-import config
+from . import config
 
 
 def default_block_name(block_index):
