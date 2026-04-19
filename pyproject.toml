@@ -1,6 +1,6 @@
 [project]
 name = "todo-program"
-version = "0.0.3"
+version = "0.0.4"
 description = "PyQt5 desktop TODO application"
 readme = "README.md"
 requires-python = ">=3.10"
