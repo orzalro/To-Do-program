@@ -67,7 +67,10 @@ jobs:
         shell: pwsh
         run: |
           $assetName = "To-do.exe"
-          Copy-Item -LiteralPath "dist\To-do.exe" -Destination "dist\$assetName" -Force
+          if (-not (Test-Path -LiteralPath "dist\$assetName")) {
+            throw "Release asset dist\$assetName was not found."
+          }
+
           "asset_name=$assetName" >> $env:GITHUB_OUTPUT
 
       - name: Upload build artifact
