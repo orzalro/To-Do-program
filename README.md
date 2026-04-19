@@ -1,5 +1,12 @@
 # To-Do Program
 
+## uv usage
+
+- Install runtime dependencies: `uv sync`
+- Run the app: `uv run python app.py`
+- Install build dependencies: `uv sync --group dev`
+- Build the Windows EXE: `uv run pyinstaller --onefile --noconsole --name "To-do" app.py`
+
 블럭별로 할 일을 나눠 관리하는 데스크톱 TODO 프로그램입니다.
 
 ## 주요 기능
