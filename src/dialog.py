@@ -2,7 +2,7 @@ from . import util
 from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QHBoxLayout, QDialog, QFormLayout, QDialogButtonBox, QStackedWidget, QLabel, QCalendarWidget
 from PyQt5.QtWidgets import QTimeEdit, QAbstractSpinBox
 from PyQt5.QtCore import QDate, QTime
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIntValidator
 from datetime import datetime
 
 
@@ -119,9 +119,16 @@ class AddTodoDialog(QDialog):
                 if self.weekday_btns[i].isChecked():
                     state = 1
                     break
-        elif current_index == 2: state = bool(self.monthly_resetparam0.text().strip())
-        elif current_index == 3 and bool(self.cycle_resetparam0_day.text() and self.cycle_resetparam0_hour.text() and self.cycle_resetparam0_minute.text()):
-            state = bool(int(self.cycle_resetparam0_day.text().strip()) > 0 or int(self.cycle_resetparam0_hour.text().strip()) > 0 or int(self.cycle_resetparam0_minute.text().strip()) > 0)
+        elif current_index == 2:
+            day_text = self.monthly_resetparam0.text().strip()
+            state = day_text.isdigit() and 1 <= int(day_text) <= 31
+        elif current_index == 3:
+            cycle_values = [
+                self.cycle_resetparam0_day.text().strip(),
+                self.cycle_resetparam0_hour.text().strip(),
+                self.cycle_resetparam0_minute.text().strip(),
+            ]
+            state = all(value.isdigit() for value in cycle_values) and any(int(value) > 0 for value in cycle_values)
         else: state = False
         state = bool(self.title_input.text().strip() and state)
         self.ok_button.setEnabled(state)
@@ -218,6 +225,7 @@ class AddTodoDialog(QDialog):
         layout.addRow('초기화 시간:', self.monthly_reset_time)
         
         self.monthly_resetparam0 = QLineEdit(self)
+        self.monthly_resetparam0.setValidator(QIntValidator(1, 31, self))
         self.monthly_resetparam0.setText(str(self.resetparam0 if self.resetparam0 != -1 and self.todo_reset_method == 2 else ''))
         self.monthly_resetparam0.setPlaceholderText('1-31(일)')
         layout.addRow('초기화 날짜:', self.monthly_resetparam0)

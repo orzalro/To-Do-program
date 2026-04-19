@@ -14,6 +14,7 @@ def elapsed_time_decorator(func):
     return wrapper
 
 
+import calendar
 from datetime import datetime, time, timedelta
 from dateutil.relativedelta import relativedelta
 import os
@@ -267,34 +268,37 @@ def weekly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
         return 1
 
 
+def normalize_month_day(resetparam0):
+    return max(1, min(int(resetparam0), 31))
+
+
+def _monthly_reset_datetime(year, month, reset_day, reset_time):
+    last_day = calendar.monthrange(year, month)[1]
+    return datetime.combine(
+        datetime(year, month, min(reset_day, last_day)).date(),
+        reset_time,
+    )
+
+
 # reset_time_input : 분 단위(0-1439), lastchecktime : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, resetparam0 : 일자(1-31)
 def monthly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
     now = datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
-    reset_day= int(resetparam0)
+    reset_day = normalize_month_day(resetparam0)
 
-    if now.day < reset_day: # 이번달 초기화 일자를 지나지 않은 경우
-        try:
-            pre_reset_time = datetime.combine((now.date() - relativedelta(months = 1)).replace(day = reset_day), reset_time)
-        except ValueError: # 지난 달에 해당 초기화 일자가 없는 경우
-            pre_reset_time = datetime.combine((now.date() - relativedelta(months = 2)).replace(day = reset_day), reset_time)
-
-    elif now.day == reset_day: # 초기화 당일
-        if now.time() < reset_time: 
-            pre_reset_time = datetime.combine(now.date() - relativedelta(months = 1), reset_time)
-        else:
-            pre_reset_time = datetime.combine(now.date(), reset_time)
-
-    else: # 이번달 초기화 일자를 지난 경우
-        pre_reset_time = datetime.combine(now.date().replace(day = reset_day), reset_time)
+    current_reset_time = _monthly_reset_datetime(now.year, now.month, reset_day, reset_time)
+    if now < current_reset_time:
+        pre_month = datetime(now.year, now.month, 1) - relativedelta(months = 1)
+        pre_reset_time = _monthly_reset_datetime(pre_month.year, pre_month.month, reset_day, reset_time)
+        next_reset_time = current_reset_time
+    else:
+        next_month = datetime(now.year, now.month, 1) + relativedelta(months = 1)
+        pre_reset_time = current_reset_time
+        next_reset_time = _monthly_reset_datetime(next_month.year, next_month.month, reset_day, reset_time)
 
     # 요청시 체크유무대신 다음번 초기화 시간 리턴
     if output == 1:
-        months_diff = now.month - pre_reset_time.month
-        months_diff = months_diff if months_diff > 0 else months_diff + 12
-        if months_diff == 2:
-            return pre_reset_time + relativedelta(months = 2)
-        return pre_reset_time + relativedelta(months = 1)
+        return next_reset_time
 
     lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
     if lastcheck < pre_reset_time: 
@@ -319,6 +323,9 @@ def cycle_reset(resetparam0, resetparam1):
     base_datetime = datetime.strptime(resetparam1, '%Y-%m-%d %H:%M:%S')
 
     next_reset_time = base_datetime + timedelta(minutes = reset_cycle)
+
+    if now < base_datetime:
+        return 1, base_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
     if base_datetime < now < next_reset_time:
         return 1, base_datetime.strftime('%Y-%m-%d %H:%M:%S')
