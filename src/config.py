@@ -1,5 +1,6 @@
 import os
 import configparser
+import io
 from . import drag_list, util
 from datetime import datetime
 from PyQt5.QtWidgets import QDialog, QCheckBox, QVBoxLayout, QLabel, QHBoxLayout, QInputDialog, QPushButton, QWidget, QAbstractItemView
@@ -147,15 +148,17 @@ def update_config(app, section, key, value):
     setattr(app, f'{key}', value)
 
     # 변경된 설정을 config.ini 파일에 저장
-    with open(CONFIG_FILE_PATH, 'w') as configfile:
-        app.config.write(configfile)
+    config_text = io.StringIO()
+    app.config.write(config_text)
+    util.safe_write_text(CONFIG_FILE_PATH, config_text.getvalue())
 
     print(f'설정 변경됨: [{section}] {key} = {value}')  # 디버깅용
 
 
 def write_config(app):
-    with open(CONFIG_FILE_PATH, 'w') as configfile:
-        app.config.write(configfile)
+    config_text = io.StringIO()
+    app.config.write(config_text)
+    util.safe_write_text(CONFIG_FILE_PATH, config_text.getvalue())
 
 
 def read_config(app):

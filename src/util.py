@@ -1,5 +1,7 @@
 DATA_FILE_PATH = 'data/userdata.json'
 BLOCK_DATA_FILE_PATH = 'data/blockdata.json'
+BACKUP_DIR_PATH = 'data/backups'
+BACKUP_KEEP_COUNT = 10
 
 
 def elapsed_time_decorator(func):
@@ -19,8 +21,69 @@ from datetime import datetime, time, timedelta
 from dateutil.relativedelta import relativedelta
 import os
 import json
+import shutil
 from PyQt5.QtWidgets import QCheckBox, QLabel
 from . import config
+
+
+def _backup_file_path(file_path, timestamp):
+    base_name = os.path.basename(file_path)
+    name, extension = os.path.splitext(base_name)
+    return os.path.join(BACKUP_DIR_PATH, f'{name}_{timestamp}{extension}')
+
+
+def _cleanup_old_backups(file_path, keep_count = BACKUP_KEEP_COUNT):
+    base_name = os.path.basename(file_path)
+    name, extension = os.path.splitext(base_name)
+    prefix = f'{name}_'
+
+    if not os.path.isdir(BACKUP_DIR_PATH):
+        return
+
+    backups = []
+    for backup_name in os.listdir(BACKUP_DIR_PATH):
+        if backup_name.startswith(prefix) and backup_name.endswith(extension):
+            backups.append(os.path.join(BACKUP_DIR_PATH, backup_name))
+
+    backups.sort(key = lambda path: os.path.getmtime(path), reverse = True)
+    for old_backup in backups[keep_count:]:
+        try:
+            os.remove(old_backup)
+        except OSError:
+            pass
+
+
+def backup_file(file_path):
+    if not os.path.exists(file_path):
+        return
+
+    os.makedirs(BACKUP_DIR_PATH, exist_ok = True)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+    shutil.copy2(file_path, _backup_file_path(file_path, timestamp))
+    _cleanup_old_backups(file_path)
+
+
+def safe_write_text(file_path, text, encoding = 'utf-8'):
+    directory = os.path.dirname(file_path)
+    if directory:
+        os.makedirs(directory, exist_ok = True)
+
+    backup_file(file_path)
+
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+    temp_path = f'{file_path}.{timestamp}.tmp'
+    try:
+        with open(temp_path, 'w', encoding = encoding) as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_path, file_path)
+    finally:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
 
 
 def default_block_name(block_index):
@@ -66,10 +129,8 @@ def load_block_data(app):
 
 def save_block_data(app):
     ensure_block_data(app)
-    os.makedirs(os.path.dirname(BLOCK_DATA_FILE_PATH), exist_ok = True)
-
-    with open(BLOCK_DATA_FILE_PATH, 'w', encoding='utf-8') as f:
-        json.dump(app.block_data, f, ensure_ascii = False, indent = 2)
+    block_data_text = json.dumps(app.block_data, ensure_ascii = False, indent = 2)
+    safe_write_text(BLOCK_DATA_FILE_PATH, block_data_text)
 
 
 def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
@@ -173,10 +234,8 @@ def save_data(app):
                         todo_list.update_param(item, resetmethod, resettime, resetparam0, new_resetparam1, checked)
                 data.append([row, col, todoname, checked, resetmethod, resettime, resetparam0, new_resetparam1])
 
-    with open(DATA_FILE_PATH, 'w', encoding='utf-8') as f:
-        for item in data:
-            json_line = json.dumps(item, ensure_ascii=False)
-            f.write(json_line + '\n')
+    data_text = ''.join(json.dumps(item, ensure_ascii=False) + '\n' for item in data)
+    safe_write_text(DATA_FILE_PATH, data_text)
 
     # 마지막체크시간 config에 저장
     config.update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
