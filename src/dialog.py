@@ -295,5 +295,10 @@ class AddTodoDialog(QDialog):
             reset_time = self.cycle_reset_time.time().toPyTime()
             base_datetime = datetime.combine(datetime.strptime(self.cycle_resetparam1.text()[7:], '%Y-%m-%d'), reset_time)
             reset_period = int(self.cycle_resetparam0_day.text()) * 1440 + int(self.cycle_resetparam0_hour.text()) * 60 + int(self.cycle_resetparam0_minute.text())
-            return current_index, -1, reset_period, base_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            # 과거 기준 시각을 선택해도 생성 직후 표시되는 다음 초기화 시각은 미래가 되게 보정한다.
+            _, normalized_base = util.cycle_reset(
+                reset_period,
+                base_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+            )
+            return current_index, -1, reset_period, normalized_base
         return ''

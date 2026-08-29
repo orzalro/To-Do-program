@@ -380,7 +380,8 @@ def cycle_reset(resetparam0, resetparam1, now = None):
     if base_datetime < now < next_reset_time:
         return 1, base_datetime.strftime('%Y-%m-%d %H:%M:%S')
     else:
-        while next_reset_time < now:
+        # 남은 시간이 항상 양수가 되도록 현재 시각과 같은 초기화 시각도 다음 주기로 넘긴다.
+        while next_reset_time <= now:
             base_datetime += timedelta(minutes = reset_cycle)
             next_reset_time = base_datetime + timedelta(minutes = reset_cycle)
         return 0, base_datetime.strftime('%Y-%m-%d %H:%M:%S')
