@@ -16,7 +16,8 @@ def elapsed_time_decorator(func):
         result = func(*args, **kwargs)
         end_time = datetime.now()
         elapsed_time = end_time - start_time
-        print(f'[{end_time.hour:02d}:{end_time.minute:02d}] {func.__name__} 소요 시간: {elapsed_time.total_seconds():.6f}s')
+        # 비유니코드 Windows 콘솔에서도 핵심 로직이 로그 출력 때문에 실패하지 않도록 ASCII만 사용한다.
+        print(f'[{end_time.hour:02d}:{end_time.minute:02d}] {func.__name__} elapsed: {elapsed_time.total_seconds():.6f}s')
         return result
     return wrapper
 
