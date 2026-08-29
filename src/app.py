@@ -1,6 +1,6 @@
 import sys
-from . import config, dialog, drag_list, util
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow, QScrollArea, QHBoxLayout, QLabel, QFrame, QToolButton, QMenu, QInputDialog, QMessageBox
+from . import config, dialog, drag_list, updater, util, version
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QDialog, QAbstractItemView, QAction, QMainWindow, QScrollArea, QHBoxLayout, QLabel, QFrame, QToolButton, QMenu, QInputDialog, QMessageBox, QProgressDialog
 from PyQt5.QtCore import QTimer, QTime, Qt, QEvent, QMimeData
 from PyQt5.QtGui import QDrag
 
@@ -152,11 +152,18 @@ class MyApp(QMainWindow):
         self.selected_block_index = 0
         self.block_frames = {}
         self.block_title_labels = {}
+        self.update_check_worker = None
+        self.update_download_worker = None
+        self.update_progress_dialog = None
+        self.update_check_silent = True
         self.main_window_init_ui()
         util.load_data(self)
         # PC가 꺼져 있던 동안 지난 반복 일정 초기화를 시작 즉시 반영한다.
         self.apply_due_resets()
         self.schedule_reset_check()
+        # 개발 실행에는 자기 교체를 적용하지 않고 릴리즈 EXE에서만 자동 확인한다.
+        if updater.can_self_update():
+            QTimer.singleShot(1500, lambda: self.check_for_updates(silent=True))
 
 
     @util.elapsed_time_decorator
@@ -174,6 +181,17 @@ class MyApp(QMainWindow):
         config_action = QAction('환경 설정', self)
         config_action.triggered.connect(lambda: config.ConfigDialog(self).exec_())
         configmenu.addAction(config_action)
+
+        helpmenu = menubar.addMenu('&Help')
+        self.check_update_action = QAction('업데이트 확인', self)
+        self.check_update_action.triggered.connect(
+            lambda: self.check_for_updates(silent=False)
+        )
+        helpmenu.addAction(self.check_update_action)
+
+        version_action = QAction('버전 정보', self)
+        version_action.triggered.connect(self.show_version_info)
+        helpmenu.addAction(version_action)
 
         copy_block_action = QAction(self)
         copy_block_action.setShortcut('Ctrl+C')
@@ -568,6 +586,124 @@ class MyApp(QMainWindow):
         # 초기화로 실제 일정 상태가 바뀐 경우에만 일정 파일을 다시 저장한다.
         if util.apply_due_resets(self):
             util.save_data(self)
+
+
+    def show_version_info(self):
+        QMessageBox.information(
+            self,
+            '버전 정보',
+            f'일정 관리자\n현재 버전: v{version.get_app_version()}',
+        )
+
+
+    def check_for_updates(self, silent=False):
+        if self.update_check_worker and self.update_check_worker.isRunning():
+            return
+
+        self.update_check_silent = silent
+        self.check_update_action.setEnabled(False)
+        self.update_check_worker = updater.UpdateCheckWorker(
+            version.get_app_version(),
+            self,
+        )
+        self.update_check_worker.update_available.connect(self.offer_update)
+        self.update_check_worker.up_to_date.connect(self.show_up_to_date)
+        self.update_check_worker.failed.connect(self.show_update_check_error)
+        self.update_check_worker.finished.connect(self.finish_update_check)
+        self.update_check_worker.start()
+
+
+    def offer_update(self, release):
+        reply = QMessageBox.question(
+            self,
+            '업데이트 확인',
+            (
+                f'새 버전 v{release.version}을 사용할 수 있습니다.\n'
+                f'현재 버전: v{version.get_app_version()}\n\n'
+                '업데이트를 설치하고 앱을 다시 시작할까요?'
+            ),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes,
+        )
+        if reply != QMessageBox.Yes:
+            return
+        if not updater.can_self_update():
+            QMessageBox.information(
+                self,
+                '업데이트 안내',
+                '자동 설치는 Windows 릴리즈 EXE에서만 사용할 수 있습니다.',
+            )
+            return
+        self.download_update(release)
+
+
+    def show_up_to_date(self):
+        if not self.update_check_silent:
+            QMessageBox.information(
+                self,
+                '업데이트 확인',
+                f'현재 v{version.get_app_version()}이 최신 버전입니다.',
+            )
+
+
+    def show_update_check_error(self, message):
+        if not self.update_check_silent:
+            QMessageBox.warning(self, '업데이트 확인 실패', message)
+
+
+    def finish_update_check(self):
+        self.check_update_action.setEnabled(True)
+        if self.update_check_worker:
+            self.update_check_worker.deleteLater()
+            self.update_check_worker = None
+
+
+    def download_update(self, release):
+        if self.update_download_worker and self.update_download_worker.isRunning():
+            return
+
+        self.update_progress_dialog = QProgressDialog(
+            '업데이트 파일을 다운로드하는 중입니다.',
+            '',
+            0,
+            100,
+            self,
+        )
+        self.update_progress_dialog.setWindowTitle('업데이트')
+        self.update_progress_dialog.setCancelButton(None)
+        self.update_progress_dialog.setWindowModality(Qt.WindowModal)
+        self.update_progress_dialog.setMinimumDuration(0)
+        self.update_progress_dialog.setValue(0)
+
+        self.update_download_worker = updater.UpdateDownloadWorker(release, self)
+        self.update_download_worker.progress.connect(
+            self.update_progress_dialog.setValue
+        )
+        # 스레드가 완전히 끝난 뒤에만 현재 앱을 종료해 QThread 파괴 오류를 피한다.
+        self.update_download_worker.finished.connect(self.finish_update_download)
+        self.update_download_worker.start()
+
+
+    def finish_update_download(self):
+        worker = self.update_download_worker
+        if self.update_progress_dialog:
+            self.update_progress_dialog.close()
+            self.update_progress_dialog.deleteLater()
+            self.update_progress_dialog = None
+
+        if worker.error:
+            QMessageBox.warning(self, '업데이트 실패', worker.error)
+        else:
+            try:
+                updater.launch_update_helper(worker.downloaded_path)
+            except Exception as error:
+                QMessageBox.warning(self, '업데이트 실패', str(error))
+            else:
+                # closeEvent가 현재 일정과 설정을 저장한 다음 교체 도우미가 EXE를 갱신한다.
+                self.close()
+
+        worker.deleteLater()
+        self.update_download_worker = None
 
 
     def schedule_reset_check(self):

@@ -5,3 +5,4 @@
 /build
 /dist
 /*.spec
+/src/build_info.py
