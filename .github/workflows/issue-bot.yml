@@ -1,0 +1,74 @@
+name: Manage GitHub Issue as Bot
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to update"
+        required: true
+        type: string
+      action:
+        description: "Issue action"
+        required: true
+        type: choice
+        options:
+          - comment
+          - close-completed
+          - close-not-planned
+          - reopen
+      comment:
+        description: "Optional comment written before the state change"
+        required: false
+        default: ""
+        type: string
+
+# 사용자 gh 토큰 대신 GITHUB_TOKEN으로 처리해 이슈 기록을 github-actions[bot] 명의로 남긴다.
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  manage-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply issue action
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          ISSUE_ACTION: ${{ inputs.action }}
+          ISSUE_COMMENT: ${{ inputs.comment }}
+        run: |
+          set -euo pipefail
+
+          # 워크플로 입력을 환경변수로 받은 뒤 번호 형식을 검증해 명령 삽입을 방지한다.
+          if [[ ! "$ISSUE_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Invalid issue number: $ISSUE_NUMBER" >&2
+            exit 1
+          fi
+
+          if [[ -n "$ISSUE_COMMENT" ]]; then
+            gh issue comment "$ISSUE_NUMBER" --body "$ISSUE_COMMENT"
+          elif [[ "$ISSUE_ACTION" == "comment" ]]; then
+            echo "A comment is required when action=comment." >&2
+            exit 1
+          fi
+
+          case "$ISSUE_ACTION" in
+            comment)
+              ;;
+            close-completed)
+              gh issue close "$ISSUE_NUMBER" --reason completed
+              ;;
+            close-not-planned)
+              gh issue close "$ISSUE_NUMBER" --reason "not planned"
+              ;;
+            reopen)
+              gh issue reopen "$ISSUE_NUMBER"
+              ;;
+            *)
+              echo "Unsupported issue action: $ISSUE_ACTION" >&2
+              exit 1
+              ;;
+          esac
