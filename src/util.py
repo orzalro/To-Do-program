@@ -1,7 +1,12 @@
+import calendar
+import json
+import os
+from datetime import datetime, time, timedelta
+
+from dateutil.relativedelta import relativedelta
+
 DATA_FILE_PATH = 'data/userdata.json'
 BLOCK_DATA_FILE_PATH = 'data/blockdata.json'
-BACKUP_DIR_PATH = 'data/backups'
-BACKUP_KEEP_COUNT = 10
 
 
 def elapsed_time_decorator(func):
@@ -16,59 +21,10 @@ def elapsed_time_decorator(func):
     return wrapper
 
 
-import calendar
-from datetime import datetime, time, timedelta
-from dateutil.relativedelta import relativedelta
-import os
-import json
-import shutil
-from PyQt5.QtWidgets import QCheckBox, QLabel
-from . import config
-
-
-def _backup_file_path(file_path, timestamp):
-    base_name = os.path.basename(file_path)
-    name, extension = os.path.splitext(base_name)
-    return os.path.join(BACKUP_DIR_PATH, f'{name}_{timestamp}{extension}')
-
-
-def _cleanup_old_backups(file_path, keep_count = BACKUP_KEEP_COUNT):
-    base_name = os.path.basename(file_path)
-    name, extension = os.path.splitext(base_name)
-    prefix = f'{name}_'
-
-    if not os.path.isdir(BACKUP_DIR_PATH):
-        return
-
-    backups = []
-    for backup_name in os.listdir(BACKUP_DIR_PATH):
-        if backup_name.startswith(prefix) and backup_name.endswith(extension):
-            backups.append(os.path.join(BACKUP_DIR_PATH, backup_name))
-
-    backups.sort(key = lambda path: os.path.getmtime(path), reverse = True)
-    for old_backup in backups[keep_count:]:
-        try:
-            os.remove(old_backup)
-        except OSError:
-            pass
-
-
-def backup_file(file_path):
-    if not os.path.exists(file_path):
-        return
-
-    os.makedirs(BACKUP_DIR_PATH, exist_ok = True)
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-    shutil.copy2(file_path, _backup_file_path(file_path, timestamp))
-    _cleanup_old_backups(file_path)
-
-
 def safe_write_text(file_path, text, encoding = 'utf-8'):
     directory = os.path.dirname(file_path)
     if directory:
         os.makedirs(directory, exist_ok = True)
-
-    backup_file(file_path)
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     temp_path = f'{file_path}.{timestamp}.tmp'
@@ -163,17 +119,22 @@ def formatting_data(resetmethod, resettime, resetparam0, resetparam1):
     return resetmethod, resettime, resetparam0, resetparam1
 
 
-def reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1):
+def reset_check(checked, lastchecktime, resetmethod, resettime, resetparam0, resetparam1, now = None):
     # 체크가 되어있는 경우
     if checked:
         # 체크박스 초기화 알고리즘 실행
         # 0: daily, 1: weekly, 2: monthly, 3: cycle
-        if resetmethod == 0: checked = daily_reset(resettime, lastchecktime)
-        if resetmethod == 1: checked = weekly_reset(resettime, lastchecktime, resetparam0)
-        if resetmethod == 2: checked = monthly_reset(resettime, lastchecktime, resetparam0)
-        if resetmethod == 3: checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
+        if resetmethod == 0:
+            checked = daily_reset(resettime, lastchecktime, now = now)
+        if resetmethod == 1:
+            checked = weekly_reset(resettime, lastchecktime, resetparam0, now = now)
+        if resetmethod == 2:
+            checked = monthly_reset(resettime, lastchecktime, resetparam0, now = now)
+        if resetmethod == 3:
+            checked, resetparam1 = cycle_reset(resetparam0, resetparam1, now = now)
     else:
-        if resetmethod == 3: checked, resetparam1 = cycle_reset(resetparam0, resetparam1)
+        if resetmethod == 3:
+            checked, resetparam1 = cycle_reset(resetparam0, resetparam1, now = now)
         checked = 0
     return checked, resetparam1
 
@@ -196,50 +157,78 @@ def load_data(app):
                 resetparam0 = i[6]
                 resetparam1 = i[7]
 
-                checked, resetparam1 = reset_check(checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
-
                 app.todo_list[f'list{row * app.grid_col + col}'].add_todo(todoname, resetmethod, resettime, resetparam0, resetparam1, checked)
-            
-            config.update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-            app.lastchecktime = app.config.get('Variables', 'lastchecktime')
             
 
 @elapsed_time_decorator
+def apply_due_resets(app, evaluated_at = None):
+    """반복 일정의 초기화 여부만 판단하고 화면 상태에 반영한다.
+
+    일정 파일 저장은 호출자가 변경 여부를 확인한 뒤 수행한다.
+    """
+    from . import config
+
+    evaluated_at = evaluated_at or datetime.now()
+    state_changed = False
+    for row in range(app.grid_row):
+        for col in range(app.grid_col):
+            todo_list = app.todo_list[f'list{row * app.grid_col + col}']
+            for i in range(todo_list.count()):
+                item = todo_list.item(i)
+                todo = todo_list.get_todo_payload(item)
+
+                checked, new_resetparam1 = reset_check(
+                    todo['checked'],
+                    app.lastchecktime,
+                    todo['reset_method'],
+                    todo['reset_time'],
+                    todo['resetparam0'],
+                    todo['resetparam1'],
+                    now = evaluated_at,
+                )
+                reset_applied = (
+                    todo['checked'] != checked
+                    or str(todo['resetparam1']) != str(new_resetparam1)
+                )
+                if reset_applied:
+                    todo_list.update_param(
+                        item,
+                        todo['reset_method'],
+                        todo['reset_time'],
+                        todo['resetparam0'],
+                        new_resetparam1,
+                        checked,
+                    )
+                    state_changed = True
+
+    # 다음 확인이 이번 평가 구간을 다시 처리하지 않도록 시각을 기록한다.
+    config.update_config(app, 'Variables', 'lastchecktime', evaluated_at.strftime('%Y-%m-%d %H:%M:%S'))
+    return state_changed
+
+
+@elapsed_time_decorator
 def save_data(app):
+    """현재 화면의 일정 상태만 파일에 저장한다."""
     data = []
     for row in range(app.grid_row):
         for col in range(app.grid_col):
             todo_list = app.todo_list[f'list{row * app.grid_col + col}']
             for i in range(todo_list.count()):
                 item = todo_list.item(i)
-                widget = todo_list.itemWidget(item)
-
-                todoname = item.data(0)
-                box_checked = widget.findChild(QCheckBox, 'checkbox').isChecked()
-                box_checked = 1 if box_checked else 0
-                resetmethod = widget.findChild(QLabel, 'methodlabel').text()
-                resettime = widget.findChild(QLabel, 'timelabel').text()
-                resetparam0 = widget.findChild(QLabel, 'param0label').text()
-                resetparam1 = widget.findChild(QLabel, 'param1label').text()
-
-                resetmethod, resettime, resetparam0, resetparam1 = formatting_data(resetmethod, resettime, resetparam0, resetparam1)
-
-                checked, new_resetparam1 = reset_check(box_checked, app.lastchecktime, resetmethod, resettime, resetparam0, resetparam1)
-                # 초기화 시간을 지날 경우 업데이트
-                if datetime.now().hour * 60 + datetime.now().minute == resettime:
-                    todo_list.update_param(item, resetmethod, resettime, resetparam0, new_resetparam1, checked)
-                elif resetmethod == 3: # 주기 리셋의 경우 현재 시간이 다음 리셋 시간 이후인 경우 기준 시간을 변경
-                    next_reset_datetime = datetime.strptime(resetparam1, '%Y-%m-%d %H:%M:%S') + timedelta(minutes = int(resetparam0))
-                    if next_reset_datetime < datetime.now():
-                        todo_list.update_param(item, resetmethod, resettime, resetparam0, new_resetparam1, checked)
-                data.append([row, col, todoname, checked, resetmethod, resettime, resetparam0, new_resetparam1])
+                todo = todo_list.get_todo_payload(item)
+                data.append([
+                    row,
+                    col,
+                    todo['title'],
+                    todo['checked'],
+                    todo['reset_method'],
+                    todo['reset_time'],
+                    todo['resetparam0'],
+                    todo['resetparam1'],
+                ])
 
     data_text = ''.join(json.dumps(item, ensure_ascii=False) + '\n' for item in data)
     safe_write_text(DATA_FILE_PATH, data_text)
-
-    # 마지막체크시간 config에 저장
-    config.update_config(app, 'Variables', 'lastchecktime', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    app.lastchecktime = app.config.get('Variables', 'lastchecktime')
 
 
 #     1. 시간별(daily), 요일별(weekly), 매 달 ~일 등(monthly)
@@ -252,8 +241,8 @@ def save_data(app):
 
 
 # reset_time_input : 분 단위(0-1439), lastchecktime : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21
-def daily_reset(reset_time_input, lastchecktime, output = 0): 
-    now = datetime.now()
+def daily_reset(reset_time_input, lastchecktime, output = 0, now = None):
+    now = now or datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
 
     # 현재 시간과 초기화 시간을 비교하여 지난번 초기화 시간 계산
@@ -276,8 +265,8 @@ def daily_reset(reset_time_input, lastchecktime, output = 0):
 
 
 # reset_time_input : 분 단위(0-1439), lastchecktime : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, resetparam0 : 요일(0-6)
-def weekly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
-    now = datetime.now()
+def weekly_reset(reset_time_input, lastchecktime, resetparam0, output = 0, now = None):
+    now = now or datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
     weekday = list(map(int, str(resetparam0).split()))
 
@@ -316,8 +305,10 @@ def weekly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
     # 요청시 체크유무대신 다음번 초기화 시간 리턴
     if output == 1:
         pre_to_next = next_reset_day - pre_reset_day
-        if pre_to_next < 0: pre_to_next += 7
-        elif pre_to_next == 0: pre_to_next = 7
+        if pre_to_next < 0:
+            pre_to_next += 7
+        elif pre_to_next == 0:
+            pre_to_next = 7
         return pre_reset_time + timedelta(days = pre_to_next)
 
     lastcheck = datetime.strptime(lastchecktime, '%Y-%m-%d %H:%M:%S')
@@ -340,8 +331,8 @@ def _monthly_reset_datetime(year, month, reset_day, reset_time):
 
 
 # reset_time_input : 분 단위(0-1439), lastchecktime : %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21, resetparam0 : 일자(1-31)
-def monthly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
-    now = datetime.now()
+def monthly_reset(reset_time_input, lastchecktime, resetparam0, output = 0, now = None):
+    now = now or datetime.now()
     reset_time = time(reset_time_input // 60, reset_time_input % 60, 0)
     reset_day = normalize_month_day(resetparam0)
 
@@ -376,8 +367,8 @@ def monthly_reset(reset_time_input, lastchecktime, resetparam0, output = 0):
 
 
 # resetparam0 : 분 단위, resetparam1: %Y-%m-%d %H:%M:%S ex)2025-01-27 11:30:21
-def cycle_reset(resetparam0, resetparam1):
-    now = datetime.now()
+def cycle_reset(resetparam0, resetparam1, now = None):
+    now = now or datetime.now()
     reset_cycle = int(resetparam0)
     base_datetime = datetime.strptime(resetparam1, '%Y-%m-%d %H:%M:%S')
 

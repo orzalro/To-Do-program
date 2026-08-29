@@ -133,9 +133,12 @@ class DragList(QListWidget):
 
     def update_param(self, item, reset_method, reset_time, param0, param1, checked):
         checkbox = QCheckBox()
-        if checked: checkbox.setChecked(True)
-        else: checkbox.setChecked(False)  # 초기 상태는 선택되지 않음
-        checkbox.clicked.connect(lambda: util.save_data(self.parent)) # 체크시 save 예정
+        if checked:
+            checkbox.setChecked(True)
+        else:
+            checkbox.setChecked(False)  # 초기 상태는 선택되지 않음
+        # 사용자가 체크한 결과만 저장하고, 반복 일정 초기화는 매분 타이머가 담당한다.
+        checkbox.clicked.connect(lambda: util.save_data(self.parent))
 
         remove_button = QPushButton('X')
         remove_button.setFixedSize(15, 15)
@@ -237,6 +240,29 @@ class DragList(QListWidget):
             
         else:
             print('할 일을 입력해주세요.')
+            return None
+
+
+    def get_todo_payload(self, item):
+        widget = self.itemWidget(item)
+        todo_reset_method = widget.findChild(QLabel, 'methodlabel').text()
+        todo_reset_time = widget.findChild(QLabel, 'timelabel').text()
+        resetparam0 = widget.findChild(QLabel, 'param0label').text()
+        resetparam1 = widget.findChild(QLabel, 'param1label').text()
+        todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(
+            todo_reset_method,
+            todo_reset_time,
+            resetparam0,
+            resetparam1,
+        )
+        return {
+            'title': item.data(0),
+            'checked': 1 if widget.findChild(QCheckBox, 'checkbox').isChecked() else 0,
+            'reset_method': todo_reset_method,
+            'reset_time': todo_reset_time,
+            'resetparam0': resetparam0,
+            'resetparam1': resetparam1,
+        }
 
 
     def get_todo_payloads(self):
@@ -244,24 +270,7 @@ class DragList(QListWidget):
 
         for i in range(self.count()):
             item = self.item(i)
-            widget = self.itemWidget(item)
-
-            todo_title = item.data(0)
-            checked = widget.findChild(QCheckBox, 'checkbox').isChecked()
-            todo_reset_method = widget.findChild(QLabel, 'methodlabel').text()
-            todo_reset_time = widget.findChild(QLabel, 'timelabel').text()
-            resetparam0 = widget.findChild(QLabel, 'param0label').text()
-            resetparam1 = widget.findChild(QLabel, 'param1label').text()
-
-            todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
-            payloads.append({
-                'title': todo_title,
-                'checked': 1 if checked else 0,
-                'reset_method': todo_reset_method,
-                'reset_time': todo_reset_time,
-                'resetparam0': resetparam0,
-                'resetparam1': resetparam1,
-            })
+            payloads.append(self.get_todo_payload(item))
 
         return payloads
 

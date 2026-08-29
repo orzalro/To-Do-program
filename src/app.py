@@ -154,7 +154,9 @@ class MyApp(QMainWindow):
         self.block_title_labels = {}
         self.main_window_init_ui()
         util.load_data(self)
-        self.auto_save()
+        # PC가 꺼져 있던 동안 지난 반복 일정 초기화를 시작 즉시 반영한다.
+        self.apply_due_resets()
+        self.schedule_reset_check()
 
 
     @util.elapsed_time_decorator
@@ -544,20 +546,30 @@ class MyApp(QMainWindow):
         super().resizeEvent(event)
 
 
-    def auto_save(self):
+    def apply_due_resets(self):
+        # 초기화로 실제 일정 상태가 바뀐 경우에만 일정 파일을 다시 저장한다.
+        if util.apply_due_resets(self):
+            util.save_data(self)
+
+
+    def schedule_reset_check(self):
         now = QTime.currentTime()
         seconds_until_next_minute = 60 - now.second()
-        QTimer.singleShot(seconds_until_next_minute * 1000, lambda: self.run_auto_save())
+        QTimer.singleShot(seconds_until_next_minute * 1000, self.run_reset_check)
 
 
-    def run_auto_save(self):
-        util.save_data(self)
-        self.auto_save()
+    def run_reset_check(self):
+        # 앱이 실행 중일 때는 매분 반복 일정의 초기화 시각이 지났는지 확인한다.
+        self.apply_due_resets()
+        self.schedule_reset_check()
 
 
     def closeEvent(self, event):
         util.save_block_data(self)
         util.save_data(self)
+        # save_data가 일정 저장만 담당하므로 창 크기 같은 설정은 종료 시 별도로 저장한다.
+        config.write_config(self)
+        super().closeEvent(event)
 
 
 def main():
