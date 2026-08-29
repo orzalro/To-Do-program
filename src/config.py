@@ -69,10 +69,10 @@ class ConfigDialog(QDialog):
         grid_config_layout.addWidget(self.grid_config_text)
         grid_row_text_input = QPushButton('행 수정', self)
         grid_row_text_input.setFixedSize(50, 20)
-        grid_row_text_input.clicked.connect(lambda: (self.get_text_update(self.parent, 'Settings', 'grid_row'), self.set_grid(self.parent, self.parent.grid_row, self.parent.grid_col)))
+        grid_row_text_input.clicked.connect(lambda: self.update_grid_dimension('grid_row'))
         grid_col_text_input = QPushButton('열 수정', self)
         grid_col_text_input.setFixedSize(50, 20)
-        grid_col_text_input.clicked.connect(lambda: (self.get_text_update(self.parent, 'Settings', 'grid_col'), self.set_grid(self.parent, self.parent.grid_row, self.parent.grid_col)))
+        grid_col_text_input.clicked.connect(lambda: self.update_grid_dimension('grid_col'))
         grid_config_layout.addWidget(grid_row_text_input)
         grid_config_layout.addWidget(grid_col_text_input)
         grid_config.setLayout(grid_config_layout)
@@ -108,6 +108,18 @@ class ConfigDialog(QDialog):
             update_config(app, section, key, text)
             self.timeout_warn_text.setText(f'일정 남은 기한이 {self.parent.timeout_warn}일 이하이면 경고')
             self.grid_config_text.setText(f'현재 그리드 {self.parent.grid_row}행 x {self.parent.grid_col}열')
+            return True
+        return False
+
+
+    def update_grid_dimension(self, key):
+        previous_grid = (int(self.parent.grid_row), int(self.parent.grid_col))
+        if self.get_text_update(self.parent, 'Settings', key):
+            current_grid = (int(self.parent.grid_row), int(self.parent.grid_col))
+            # 값이 같으면 목록을 재배치하거나 파일을 다시 쓰지 않는다.
+            if current_grid == previous_grid:
+                return
+            self.set_grid(self.parent, self.parent.grid_row, self.parent.grid_col)
 
 
     def set_grid(self, app, row, col):
@@ -136,10 +148,12 @@ class ConfigDialog(QDialog):
             for i in range(app.grid_row * app.grid_col):
                 if f'list{i}' not in app.todo_list:
                     app.todo_list[f'list{i}'] = drag_list.DragList(app)
+                    app.todo_list[f'list{i}'].block_index = i
                     app.todo_list[f'list{i}'].setDragDropMode(QAbstractItemView.InternalMove)
         util.ensure_block_data(app)
-        util.save_block_data(app)
         app.show_grid()
+        util.save_block_data(app)
+        util.save_data(app)
 
 
 def update_config(app, section, key, value):

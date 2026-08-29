@@ -30,6 +30,9 @@ class DragList(QListWidget):
 
 
     def open_edit_todo_dialog(self, item):
+        if item is None:
+            return
+        previous_payload = self.get_todo_payload(item)
         widget = self.itemWidget(item)
         todo_reset_method = widget.findChild(QLabel, 'methodlabel').text()
         todo_reset_time = widget.findChild(QLabel, 'timelabel').text()
@@ -42,7 +45,10 @@ class DragList(QListWidget):
             item.setData(0, dialog.title_input.text())
             todo_reset_method, todo_reset_time, resetparam0, resetparam1 = dialog.get_data()
             self.update_param(item, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked = 0)
-
+            payload = self.get_todo_payload(item)
+            # 편집 결과가 기존 값과 같으면 불필요한 파일 저장을 생략한다.
+            if payload == previous_payload:
+                return
             util.save_data(self.parent)
 
 
@@ -59,7 +65,11 @@ class DragList(QListWidget):
     def dropEvent(self, event):
         source_list = event.source()
         item = source_list.currentItem()
+        if item is None:
+            return
         widget = source_list.itemWidget(item)
+        source_block = source_list.block_index
+        source_row = source_list.row(item)
 
         drop_pos = event.pos()  # 드롭된 위치의 좌표
         item_at_pos = self.itemAt(drop_pos)  # 드롭된 위치에 해당하는 아이템
@@ -88,10 +98,14 @@ class DragList(QListWidget):
         resetparam1 = widget.findChild(QLabel, 'param1label').text()
 
         todo_reset_method, todo_reset_time, resetparam0, resetparam1 = util.formatting_data(todo_reset_method, todo_reset_time, resetparam0, resetparam1)
-        self.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked, row)
+        inserted_item = self.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1, checked, row)
 
         row = source_list.row(item)
         source_list.takeItem(row)
+        target_row = self.row(inserted_item)
+        # 같은 블럭의 같은 위치에 놓은 경우는 실제 변경이 없다.
+        if source_block == self.block_index and source_row == target_row:
+            return
         util.save_data(self.parent)
 
 
@@ -191,12 +205,14 @@ class DragList(QListWidget):
         timelabel.setVisible(False)
         item_layout.addWidget(timelabel)
 
-        if 'param0label' not in locals():param0label = QLabel()
+        if 'param0label' not in locals():
+            param0label = QLabel()
         param0label.setObjectName('param0label')
         param0label.setVisible(False)
         item_layout.addWidget(param0label)
 
-        if 'param1label' not in locals():param1label = QLabel()
+        if 'param1label' not in locals():
+            param1label = QLabel()
         param1label.setObjectName('param1label')
         param1label.setVisible(False)
         item_layout.addWidget(param1label)
@@ -237,6 +253,7 @@ class DragList(QListWidget):
 
             self.insertItem(row, item)
             self.update_param(item, reset_method, reset_time, param0, param1, checked)
+            return item
             
         else:
             print('할 일을 입력해주세요.')

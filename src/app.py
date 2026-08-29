@@ -283,14 +283,19 @@ class MyApp(QMainWindow):
         return self.block_data[block_index]['name']
 
 
-    def set_block_name(self, block_index, name):
+    def set_block_name(self, block_index, name, save = True):
         name = name.strip()
         if not name:
-            return
+            return False
 
         util.ensure_block_data(self)
+        # 동일한 이름은 화면과 파일 상태를 바꾸지 않으므로 재저장하지 않는다.
+        if self.block_data[block_index]['name'] == name:
+            return False
         self.block_data[block_index]['name'] = name
-        util.save_block_data(self)
+        if save:
+            util.save_block_data(self)
+        return True
 
 
     def get_block_snapshot(self, block_index):
@@ -325,6 +330,9 @@ class MyApp(QMainWindow):
 
         source_snapshot = self.get_block_snapshot(source_index)
         target_snapshot = self.get_block_snapshot(target_index)
+        # 두 블럭의 내용이 같으면 순서와 저장 파일을 다시 갱신할 필요가 없다.
+        if source_snapshot == target_snapshot:
+            return
 
         self.apply_block_snapshot(source_index, target_snapshot)
         self.apply_block_snapshot(target_index, source_snapshot)
@@ -352,6 +360,7 @@ class MyApp(QMainWindow):
 
         self.select_block(block_index)
         todo_list = self.todo_list[f'list{block_index}']
+        current_snapshot = self.get_block_snapshot(block_index)
         if todo_list.count() > 0:
             reply = QMessageBox.question(
                 self,
@@ -363,8 +372,12 @@ class MyApp(QMainWindow):
             if reply != QMessageBox.Yes:
                 return
 
-        self.set_block_name(block_index, self.block_clipboard['name'])
+        if current_snapshot == self.block_clipboard:
+            return
+
+        self.set_block_name(block_index, self.block_clipboard['name'], save = False)
         todo_list.load_todo_payloads(self.block_clipboard['todos'])
+        util.save_block_data(self)
         util.save_data(self)
         self.refresh_block_title(block_index)
 
@@ -393,8 +406,12 @@ class MyApp(QMainWindow):
         if reply != QMessageBox.Yes:
             return
 
-        self.set_block_name(block_index, util.default_block_name(block_index))
+        default_name = util.default_block_name(block_index)
+        if self.get_block_snapshot(block_index) == {'name': default_name, 'todos': []}:
+            return
+        self.set_block_name(block_index, default_name, save = False)
         self.todo_list[f'list{block_index}'].clear()
+        util.save_block_data(self)
         util.save_data(self)
         self.refresh_block_title(block_index)
 
@@ -403,8 +420,8 @@ class MyApp(QMainWindow):
         self.select_block(block_index)
         current_name = self.get_block_name(block_index)
         text, ok = QInputDialog.getText(self, '블럭 이름', '블럭 이름을 입력하세요.', text = current_name)
-        if ok and text.strip():
-            self.set_block_name(block_index, text)
+        new_name = text.strip()
+        if ok and new_name and self.set_block_name(block_index, new_name):
             self.refresh_block_title(block_index)
 
 
@@ -445,8 +462,9 @@ class MyApp(QMainWindow):
             todo_title = add_todo_dialog.title_input.text()
             todo_reset_method, todo_reset_time, resetparam0, resetparam1 = add_todo_dialog.get_data()
             todo_list = self.todo_list[f'list{block_index}']
-            todo_list.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1)
-            util.save_data(self)
+            item = todo_list.add_todo(todo_title, todo_reset_method, todo_reset_time, resetparam0, resetparam1)
+            if item is not None:
+                util.save_data(self)
 
 
     def build_block_frame(self, row, col, block_index):
