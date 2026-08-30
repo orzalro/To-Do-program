@@ -191,6 +191,10 @@ def apply_due_resets(app, evaluated_at = None):
                     todo['checked'] != checked
                     or str(todo['resetparam1']) != str(new_resetparam1)
                 )
+                reset_time_due = todo_list.is_reset_time_due(
+                    item,
+                    evaluated_at,
+                )
                 if reset_applied:
                     todo_list.update_param(
                         item,
@@ -199,8 +203,19 @@ def apply_due_resets(app, evaluated_at = None):
                         todo['resetparam0'],
                         new_resetparam1,
                         checked,
+                        evaluated_at=evaluated_at,
                     )
                     state_changed = True
+                elif reset_time_due:
+                    # 미체크 일정도 다음 초기화 시각은 갱신한다.
+                    todo_list.refresh_reset_time(
+                        item,
+                        todo['reset_method'],
+                        todo['reset_time'],
+                        todo['resetparam0'],
+                        new_resetparam1,
+                        evaluated_at,
+                    )
 
     # 다음 확인이 이번 평가 구간을 다시 처리하지 않도록 시각을 기록한다.
     config.update_config(app, 'Variables', 'lastchecktime', evaluated_at.strftime('%Y-%m-%d %H:%M:%S'))

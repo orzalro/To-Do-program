@@ -145,7 +145,88 @@ class DragList(QListWidget):
             self.parent.bind_block_interaction(widget, 'clear')
 
 
-    def update_param(self, item, reset_method, reset_time, param0, param1, checked):
+    def is_reset_time_due(self, item, evaluated_at):
+        next_reset_datetime = item.data(Qt.UserRole)
+        return (
+            next_reset_datetime is not None
+            and next_reset_datetime <= evaluated_at
+        )
+
+
+    def refresh_reset_time(
+        self,
+        item,
+        reset_method,
+        reset_time,
+        param0,
+        param1,
+        evaluated_at,
+    ):
+        widget = self.itemWidget(item)
+        textlabel = widget.findChild(QLabel, 'textlabel')
+
+        if reset_method == 0:
+            next_reset_datetime = util.daily_reset(
+                reset_time,
+                self.parent.lastchecktime,
+                1,
+                now=evaluated_at,
+            )
+            reset_time_text = f'{reset_time // 60:02}:{reset_time % 60:02}'
+            textlabel.setText(f'일간 {reset_time_text}')
+        elif reset_method == 1:
+            next_reset_datetime = util.weekly_reset(
+                reset_time,
+                self.parent.lastchecktime,
+                param0,
+                1,
+                now=evaluated_at,
+            )
+            weekday_dict = {
+                0: '월요일',
+                1: '화요일',
+                2: '수요일',
+                3: '목요일',
+                4: '금요일',
+                5: '토요일',
+                6: '일요일',
+            }
+            reset_time_text = f'{reset_time // 60:02}:{reset_time % 60:02}'
+            textlabel.setText(
+                f'주간 {reset_time_text}  '
+                f'{weekday_dict[next_reset_datetime.weekday()]}'
+            )
+        elif reset_method == 2:
+            next_reset_datetime = util.monthly_reset(
+                reset_time,
+                self.parent.lastchecktime,
+                param0,
+                1,
+                now=evaluated_at,
+            )
+            reset_time_text = f'{reset_time // 60:02}:{reset_time % 60:02}'
+            textlabel.setText(f'월간 {reset_time_text}  {param0}일')
+        else:
+            next_reset_datetime = datetime.strptime(
+                param1,
+                '%Y-%m-%d %H:%M:%S',
+            ) + timedelta(minutes=int(param0))
+            cycle_label = next_reset_datetime.strftime('%H:%M  %#m월 %#d일')
+            textlabel.setText(f'주기 {cycle_label}')
+
+        item.setData(Qt.UserRole, next_reset_datetime)
+
+
+    def update_param(
+        self,
+        item,
+        reset_method,
+        reset_time,
+        param0,
+        param1,
+        checked,
+        evaluated_at=None,
+    ):
         checkbox = QCheckBox()
         if checked:
             checkbox.setChecked(True)
@@ -165,7 +246,12 @@ class DragList(QListWidget):
         # 초기화 알고리즘에 따라 다른 정보 출력
         if reset_method == 0:
             methodlabel = QLabel('일간')
-            next_reset_datetime = util.daily_reset(reset_time, self.parent.lastchecktime, 1)
+            next_reset_datetime = util.daily_reset(
+                reset_time,
+                self.parent.lastchecktime,
+                1,
+                now=evaluated_at,
+            )
             reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
             timelabel = QLabel(reset_time)
             textlabel = QLabel(f'일간 {reset_time}')
@@ -174,7 +260,13 @@ class DragList(QListWidget):
             methodlabel = QLabel('주간')
             weekday_dict = {0: '월요일', 1: '화요일', 2: '수요일', 3: '목요일', 4: '금요일', 5: '토요일', 6: '일요일'}
             param0label = QLabel(str(param0))
-            next_reset_datetime = util.weekly_reset(reset_time, self.parent.lastchecktime, param0, 1)
+            next_reset_datetime = util.weekly_reset(
+                reset_time,
+                self.parent.lastchecktime,
+                param0,
+                1,
+                now=evaluated_at,
+            )
             next_reset_weekday = next_reset_datetime.weekday()
             reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
             timelabel = QLabel(reset_time)
@@ -183,7 +275,13 @@ class DragList(QListWidget):
         elif reset_method == 2:
             methodlabel = QLabel('월간')
             param0label = QLabel(f'{param0}일')
-            next_reset_datetime = util.monthly_reset(reset_time, self.parent.lastchecktime, param0, 1)
+            next_reset_datetime = util.monthly_reset(
+                reset_time,
+                self.parent.lastchecktime,
+                param0,
+                1,
+                now=evaluated_at,
+            )
             reset_time = f'{reset_time // 60:02}:{reset_time % 60:02}'
             timelabel = QLabel(reset_time)
             textlabel = QLabel(f'월간 {reset_time}  {param0}일')

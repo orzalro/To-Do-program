@@ -30,9 +30,11 @@ class FakeCycleTime:
 
 
 class FakeTodoList:
-    def __init__(self, payload):
+    def __init__(self, payload, next_reset_datetime=None):
         self.payload = payload
+        self.next_reset_datetime = next_reset_datetime
         self.update_count = 0
+        self.refresh_count = 0
 
     def count(self):
         return 1
@@ -43,7 +45,22 @@ class FakeTodoList:
     def get_todo_payload(self, item):
         return dict(self.payload)
 
-    def update_param(self, item, method, reset_time, param0, param1, checked):
+    def is_reset_time_due(self, item, evaluated_at):
+        return (
+            self.next_reset_datetime is not None
+            and self.next_reset_datetime <= evaluated_at
+        )
+
+    def update_param(
+        self,
+        item,
+        method,
+        reset_time,
+        param0,
+        param1,
+        checked,
+        evaluated_at=None,
+    ):
         self.payload.update({
             "checked": checked,
             "reset_method": method,
@@ -51,15 +68,42 @@ class FakeTodoList:
             "resetparam0": param0,
             "resetparam1": param1,
         })
+        if method == 0:
+            self.next_reset_datetime = util.daily_reset(
+                reset_time,
+                "2026-08-15 08:00:00",
+                output=1,
+                now=evaluated_at,
+            )
         self.update_count += 1
+
+    def refresh_reset_time(
+        self,
+        item,
+        method,
+        reset_time,
+        param0,
+        param1,
+        evaluated_at,
+    ):
+        if method == 0:
+            self.next_reset_datetime = util.daily_reset(
+                reset_time,
+                "2026-08-15 08:00:00",
+                output=1,
+                now=evaluated_at,
+            )
+        self.refresh_count += 1
 
 
 class FakeApp:
-    def __init__(self, payload):
+    def __init__(self, payload, next_reset_datetime=None):
         self.grid_row = 1
         self.grid_col = 1
         self.lastchecktime = "2026-08-15 08:00:00"
-        self.todo_list = {"list0": FakeTodoList(payload)}
+        self.todo_list = {
+            "list0": FakeTodoList(payload, next_reset_datetime)
+        }
 
 
 class ResetRuleTests(unittest.TestCase):
@@ -151,6 +195,63 @@ class ResetRuleTests(unittest.TestCase):
         self.assertEqual(app.todo_list["list0"].update_count, 1)
         self.assertEqual(app.lastchecktime, "2026-08-16 10:00:00")
         write_text.assert_not_called()
+
+    def test_unchecked_todo_refreshes_next_reset_after_boundary(self):
+        app = FakeApp(
+            {
+                "title": "미체크 일간 일정",
+                "checked": 0,
+                "reset_method": 0,
+                "reset_time": 540,
+                "resetparam0": -1,
+                "resetparam1": -1,
+            },
+            next_reset_datetime=datetime(2026, 8, 16, 9, 0, 0),
+        )
+
+        def update_config(target, section, key, value):
+            setattr(target, key, value)
+
+        with patch("src.config.update_config", side_effect=update_config):
+            changed = util.apply_due_resets(
+                app,
+                evaluated_at=datetime(2026, 8, 16, 10, 0, 0),
+            )
+
+        todo_list = app.todo_list["list0"]
+        self.assertFalse(changed)
+        self.assertEqual(todo_list.payload["checked"], 0)
+        self.assertEqual(todo_list.update_count, 0)
+        self.assertEqual(todo_list.refresh_count, 1)
+        self.assertEqual(
+            todo_list.next_reset_datetime,
+            datetime(2026, 8, 17, 9, 0, 0),
+        )
+
+    def test_unchecked_todo_does_not_refresh_before_boundary(self):
+        next_reset = datetime(2026, 8, 17, 9, 0, 0)
+        app = FakeApp(
+            {
+                "title": "미체크 일간 일정",
+                "checked": 0,
+                "reset_method": 0,
+                "reset_time": 540,
+                "resetparam0": -1,
+                "resetparam1": -1,
+            },
+            next_reset_datetime=next_reset,
+        )
+
+        with patch("src.config.update_config"):
+            changed = util.apply_due_resets(
+                app,
+                evaluated_at=datetime(2026, 8, 16, 10, 0, 0),
+            )
+
+        self.assertFalse(changed)
+        self.assertEqual(app.todo_list["list0"].update_count, 0)
+        self.assertEqual(app.todo_list["list0"].refresh_count, 0)
+        self.assertEqual(app.todo_list["list0"].next_reset_datetime, next_reset)
 
     def test_save_data_does_not_evaluate_resets(self):
         app = FakeApp({
